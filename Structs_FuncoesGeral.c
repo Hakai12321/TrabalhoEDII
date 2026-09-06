@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <conio.h>
 #include <ctype.h>
+
 //--------------------------------------------Structs--------------------------------------------//
 struct BancoDados{
     char bancoDados[50];
@@ -28,8 +29,35 @@ typedef struct Valor {
 //--------------------------------------------Structs--------------------------------------------//
 
 
-//--------------------------------------------Descritor_BancoDados--------------------------------------------//
+//--------------------------------------------Prototipo das Funções--------------------------------------------//
 BancoDados* criarBancoDados(char nome[50]);
+Tabela* criarTabela(char nome[50]);
+Campos* criarCampo(char* nome, char tipo, char pk, char fk);
+Valor* criarValor(char tipo, char* textoValor);   
+
+void  inserirValor(Valor** lista, Valor* novo);        // sempre no fim, pra manter a ordem das linhas
+Valor* buscarValorPorIndice(Valor* lista, int indiceLinha);
+void  removerValorPorIndice(Valor** lista, int indiceLinha);
+void  atualizarValor(Valor* Valor, char tipo, char* novoTextoValor);
+int   compararValor(Valor* Valor, char tipo, char* valorComparar); // igualdade e BETWEEN no WHERE
+void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo
+void  liberarValores(Valor* lista);
+
+void   inserirCampo(Campos** lista, Campos* novo);
+Campos* buscarCampo(Campos* lista, char* nome);
+int    getIndiceCampo(Campos* lista, char* nome);   // posição do campo — precisa pra achar o Dado correspondente na linha
+Campos* buscarCampoPK(Campos* lista);                // pra validar INSERT/UPDATE contra chave primária
+void   liberarCampos(Campos* lista);
+
+void    inserirTabela(BancoDados *bd, Tabela* nova);
+Tabela* buscarTabela(Tabela* lista, char* nome);   // usado por DDL, DML e DQL o tempo todo
+void    removerTabela(Tabela** lista, char* nome); // opcional, mas bom ter
+void    liberarTabelas(Tabela* lista);             // libera em cascata os Campos e Dados
+//--------------------------------------------Prototipo das Funções--------------------------------------------//
+
+
+//--------------------------------------------Descritor - Banco de Dados--------------------------------------------//
+
 void liberarBancoDados(BancoDados* bd);
 
 BancoDados* criarBancoDados(char nome[50])
@@ -48,15 +76,10 @@ void liberarBancoDados(BancoDados* bd){
         free(bd);
     }
 }
-//--------------------------------------------DescritorBanco_Dados--------------------------------------------//
+//--------------------------------------------Descritor - Banco de Dados--------------------------------------------//
 
 
-//--------------------------------------------ListaDupla_Tabela--------------------------------------------//
-Tabela* criarTabela(char nome[50]);
-void    inserirTabela(BancoDados *bd, Tabela* nova);
-Tabela* buscarTabela(Tabela* lista, char* nome);   // usado por DDL, DML e DQL o tempo todo
-void    removerTabela(Tabela** lista, char* nome); // opcional, mas bom ter
-void    liberarTabelas(Tabela* lista);             // libera em cascata os Campos e Dados
+//--------------------------------------------Lista Dupla - Tabela--------------------------------------------//
 
 Tabela* criarTabela(char nome[50]){
     Tabela *tb = (Tabela*)malloc(sizeof(Tabela));
@@ -76,31 +99,12 @@ void    inserirTabela(BancoDados *bd, Tabela* nova){
         
     }
 }
+//--------------------------------------------Lista Dupla - Tabela--------------------------------------------//
 
-//--------------------------------------------ListaDupla_Tabela--------------------------------------------//
+
+//--------------------------------------------Lista Simples - Campos--------------------------------------------//
+//--------------------------------------------Lista Simples - Campos--------------------------------------------//
 
 
-//--------------------------------------------ListaSimples_Campos--------------------------------------------//
-Campos* criarCampo(char* nome, char tipo, char pk, char fk);
-void   inserirCampo(Campos** lista, Campos* novo);
-Campos* buscarCampo(Campos* lista, char* nome);
-int    getIndiceCampo(Campos* lista, char* nome);   // posição do campo — precisa pra achar o Dado correspondente na linha
-Campos* buscarCampoPK(Campos* lista);                // pra validar INSERT/UPDATE contra chave primária
-void   liberarCampos(Campos* lista);
-
-//--------------------------------------------ListaSimples_Campos--------------------------------------------//
-
-//--------------------------------------------ListaSimples_Valor--------------------------------------------//
-    Valor* criarValor(char tipo, char* textoValor);       // faz o parse do texto pro tipo certo (union)
-void  inserirValor(Valor** lista, Valor* novo);        // sempre no fim, pra manter a ordem das linhas
-Valor* buscarValorPorIndice(Valor* lista, int indiceLinha);
-void  removerValorPorIndice(Valor** lista, int indiceLinha);
-void  atualizarValor(Valor* Valor, char tipo, char* novoTextoValor);
-int   compararValor(Valor* Valor, char tipo, char* valorComparar); // igualdade e BETWEEN no WHERE
-void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo
-void  liberarValors(Valor* lista);
-
-Valor* criarValor(char tipo, char* textoValor){
-    
-}
-//--------------------------------------------ListaSimples_Valor--------------------------------------------//
+//--------------------------------------------Lista Simples - Valor--------------------------------------------//
+//--------------------------------------------Lista Simples - Valor--------------------------------------------//
