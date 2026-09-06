@@ -14,8 +14,9 @@ int main()
     FILE *ptr = fopen("","r");
     while(!feof(ptr))
     {
-        fscanf(ptr,"%s",s);
+        fscanf(ptr,"%s %s",s);
         //interpreta cada palavra
+        
     }
     
 }
