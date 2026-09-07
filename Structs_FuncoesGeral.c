@@ -52,13 +52,13 @@ void   liberarCampos(Campos* lista);
 void    inserirTabela(BancoDados *bd, Tabela* nova);
 Tabela* buscarTabela(Tabela* tab, char nome[50]);   // usado por DDL, DML e DQL o tempo todo //recebe bd->pTabela
 void    removerTabela(BancoDados *bd, char nome[50]); // opcional, mas bom ter
-void    liberarTabelas(Tabela* lista);             // libera em cascata os Campos e Dados
+void    liberarTabelas(Tabela* lista);
+         
+void liberarBancoDados(BancoDados* bd);    // libera em cascata os Campos e Dados
 //--------------------------------------------Prototipo das Funções--------------------------------------------//
 
 
 //--------------------------------------------Descritor - Banco de Dados--------------------------------------------//
-
-void liberarBancoDados(BancoDados* bd);
 
 BancoDados* criarBancoDados(char nome[50])
 {
