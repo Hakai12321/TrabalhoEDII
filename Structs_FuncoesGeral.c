@@ -50,8 +50,8 @@ Campos* buscarCampoPK(Campos* lista);                // pra validar INSERT/UPDAT
 void   liberarCampos(Campos* lista);
 
 void    inserirTabela(BancoDados *bd, Tabela* nova);
-Tabela* buscarTabela(Tabela* lista, char* nome);   // usado por DDL, DML e DQL o tempo todo
-void    removerTabela(Tabela** lista, char* nome); // opcional, mas bom ter
+Tabela* buscarTabela(Tabela* tab, char nome[50]);   // usado por DDL, DML e DQL o tempo todo //recebe bd->pTabela
+void    removerTabela(BancoDados *bd, char nome[50]); // opcional, mas bom ter
 void    liberarTabelas(Tabela* lista);             // libera em cascata os Campos e Dados
 //--------------------------------------------Prototipo das Funções--------------------------------------------//
 
@@ -89,14 +89,92 @@ Tabela* criarTabela(char nome[50]){
     return tb;
 }
 
-void    inserirTabela(BancoDados *bd, Tabela* nova){
-    if(bd == NULL || nova == NULL)
+void    inserirTabela(BancoDados *bd, Tabela *tab){
+    if(bd == NULL || tab == NULL)
     {
         printf("Erro de Compilacao!!!");
     }
     else
     {
-        
+        if(bd->pTabelas == NULL)
+            bd->pTabelas = tab;
+        else
+        {
+            Tabela* atual = bd;
+            while (atual->prox != NULL)
+                atual = atual->prox;
+            atual->prox = tab;
+            tab->ant = atual;
+        }
+    }
+}
+
+Tabela* buscarTabela(Tabela *tab, char nome[50]){
+    if(tab == NULL)
+    {
+        printf("Erro de Compilacao!!!");
+    }
+    else
+    {
+        while(tab->prox != NULL && (strcmp(tab->tabela,nome)!=0) )
+        {
+            tab = tab->prox;
+        }
+        if(strcmp(tab->tabela,nome)==0)
+        {
+            return tab;
+        }
+        printf("Nao existe!!!");
+    }
+    return NULL;
+}
+
+void  liberarTabelas(Tabela* tab){
+    if (tab == NULL) 
+        printf("Tabela inexistente!!!");
+    else{
+        Tabela *atual=tab; 
+        while(atual!=NULL)
+        {
+            liberarCampos(atual->pCampos);
+            atual = atual->prox;
+            free(tab);
+            tab = atual;
+        }
+    }
+}
+
+void    removerTabela(BancoDados *bd, char nome[50]){
+    if (bd == NULL) 
+        printf("Banco de Dados inexistente!!!");
+    else{
+        Tabela *atual=buscarTabela(bd->pTabelas,nome); 
+        if(atual != NULL)
+        {
+            liberarCampos(atual->pCampos);
+            if(atual->ant == atual->prox)
+                bd->pTabelas = NULL;
+            else
+            {
+                if(atual->ant == NULL){
+                    bd->pTabelas = atual->prox;
+                    atual->prox->ant = NULL;
+                }
+                else
+                {
+                    if(atual->prox == NULL)
+                    {
+                        atual->ant->prox = NULL;
+                    }
+                    else
+                    {
+                        atual->ant->prox = atual->prox;
+                        atual->prox->ant = atual->ant;
+                    }
+                }
+            }
+            free(atual);
+        }
     }
 }
 //--------------------------------------------Lista Dupla - Tabela--------------------------------------------//
