@@ -24,10 +24,19 @@ typedef struct Campos {
     Valor *pDados;
 } Campos;
 
-typedef struct Valor {
-    char valor[TF];
-    struct Valor *prox;
-} Valor;
+struct Valor{
+    Valor *prox;
+    TipoValor valor;
+}typedef Valor;
+
+union TipoValor
+{
+    int valorI;
+    float valorN;
+    char valorD[10];
+    char valorC;
+    char valorT[20];
+}typedef TipoValor;
 //--------------------------------------------Structs--------------------------------------------//
 
 
@@ -46,10 +55,9 @@ void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela confor
 void  liberarValores(Valor* lista);
 
 void   inserirCampo(Tabela *tab, Campos* novo);
-Campos* buscarCampo(Campos* campo, char* nome);     // recebe tabela.pCampos
-int    getIndiceCampo(Campos* lista, char* nome);   // posição do campo — precisa pra achar o Dado correspondente na linha
-Campos* buscarCampoPK(Campos* lista);                // pra validar INSERT/UPDATE contra chave primária
-void   liberarCampos(Campos* campo);
+Campos* buscarCampo(Campos *campo, char* nome);     // recebe tabela.pCampos
+Campos* buscarCampoPK(Campos *lista);                // pra validar INSERT/UPDATE contra chave primária // recebe tabela.pCampos
+void   liberarCampos(Campos *campo);
 
 void    inserirTabela(BancoDados *bd, Tabela* nova);
 Tabela* buscarTabela(Tabela* tab, char nome[TF]);   // usado por DDL, DML e DQL o tempo todo //recebe bd->pTabela
@@ -194,7 +202,7 @@ Campos* criarCampo(char nome[TF], char tipo, char pk, char fk){
     return campo;
 }
 
-void   inserirCampo(Tabela *tab, Campos* campo){
+void   inserirCampo(Tabela *tab, Campos *campo){
     if(tab == NULL || campo == NULL)
     {
         printf("Erro de Compilacao!!!");
@@ -213,7 +221,7 @@ void   inserirCampo(Tabela *tab, Campos* campo){
     }
 }
 
-Campos* buscarCampo(Campos* campo, char* nome){
+Campos* buscarCampo(Campos *campo, char* nome){
     if(campo == NULL)
         {
             printf("Erro de Compilacao!!!");
@@ -233,10 +241,23 @@ Campos* buscarCampo(Campos* campo, char* nome){
         return NULL;
 }
 
+Campos* buscarCampoPK(Campos *campo){
+    if(campo == NULL)
+    {
+        printf("Erro de Compilacao!!!");
+    }
+    else{
+        while(campo != NULL && campo->pk != 'S' && campo->pk != 's')
+            campo = campo->prox;
 
+        if(campo == NULL)
+            printf("Nao existe Primary Key!");
 
+        return campo;
+    }
+}
 
-void   liberarCampos(Campos* campo){
+void   liberarCampos(Campos *campo){
     if (campo == NULL) 
         printf("Campo inexistente!!!");
     else{
@@ -254,4 +275,9 @@ void   liberarCampos(Campos* campo){
 
 
 //--------------------------------------------Lista Simples - Valor--------------------------------------------//
+Valor* criarValor(char tipo, char* textoValor){
+    Valor *valor = (Valor*)malloc(sizeof(Valor));
+    valor->prox = NULL;
+    return valor;
+} 
 //--------------------------------------------Lista Simples - Valor--------------------------------------------//
