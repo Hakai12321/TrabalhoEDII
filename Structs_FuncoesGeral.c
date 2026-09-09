@@ -4,34 +4,36 @@
 #include <conio.h>
 #include <ctype.h>
 
+
+#define TF 50
 //--------------------------------------------Structs--------------------------------------------//
 struct BancoDados{
-    char bancoDados[50];
+    char bancoDados[TF];
     Tabela *pTabelas;
 }typedef BancoDados;
 
 struct Tabela{
-    char tabela[50];
+    char tabela[TF];
     Tabela *ant,*prox;
     Campos *pCampos;
 }typedef Tabela;
 
 typedef struct Campos {
-    char campo[50];
+    char campo[TF],tipo,pk,fk;
     struct Campos *prox;
-    Valor *pValores;
+    Valor *pDados;
 } Campos;
 
 typedef struct Valor {
-    char valor[50];
+    char valor[TF];
     struct Valor *prox;
 } Valor;
 //--------------------------------------------Structs--------------------------------------------//
 
 
 //--------------------------------------------Prototipo das Funções--------------------------------------------//
-BancoDados* criarBancoDados(char nome[50]);
-Tabela* criarTabela(char nome[50]);
+BancoDados* criarBancoDados(char nome[TF]);
+Tabela* criarTabela(char nome[TF]);
 Campos* criarCampo(char* nome, char tipo, char pk, char fk);
 Valor* criarValor(char tipo, char* textoValor);   
 
@@ -43,15 +45,15 @@ int   compararValor(Valor* Valor, char tipo, char* valorComparar); // igualdade 
 void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo
 void  liberarValores(Valor* lista);
 
-void   inserirCampo(Campos** lista, Campos* novo);
-Campos* buscarCampo(Campos* lista, char* nome);
+void   inserirCampo(Tabela *tab, Campos* novo);
+Campos* buscarCampo(Campos* campo, char* nome);     // recebe tabela.pCampos
 int    getIndiceCampo(Campos* lista, char* nome);   // posição do campo — precisa pra achar o Dado correspondente na linha
 Campos* buscarCampoPK(Campos* lista);                // pra validar INSERT/UPDATE contra chave primária
-void   liberarCampos(Campos* lista);
+void   liberarCampos(Campos* campo);
 
 void    inserirTabela(BancoDados *bd, Tabela* nova);
-Tabela* buscarTabela(Tabela* tab, char nome[50]);   // usado por DDL, DML e DQL o tempo todo //recebe bd->pTabela
-void    removerTabela(BancoDados *bd, char nome[50]); // opcional, mas bom ter
+Tabela* buscarTabela(Tabela* tab, char nome[TF]);   // usado por DDL, DML e DQL o tempo todo //recebe bd->pTabela
+void    removerTabela(BancoDados *bd, char nome[TF]); // opcional, mas bom ter
 void    liberarTabelas(Tabela* lista);
          
 void liberarBancoDados(BancoDados* bd);    // libera em cascata os Campos e Dados
@@ -60,7 +62,7 @@ void liberarBancoDados(BancoDados* bd);    // libera em cascata os Campos e Dado
 
 //--------------------------------------------Descritor - Banco de Dados--------------------------------------------//
 
-BancoDados* criarBancoDados(char nome[50])
+BancoDados* criarBancoDados(char nome[TF])
 {
     BancoDados *bd = (BancoDados*)malloc(sizeof(BancoDados));
     strcpy(bd->bancoDados,nome);
@@ -81,7 +83,7 @@ void liberarBancoDados(BancoDados* bd){
 
 //--------------------------------------------Lista Dupla - Tabela--------------------------------------------//
 
-Tabela* criarTabela(char nome[50]){
+Tabela* criarTabela(char nome[TF]){
     Tabela *tb = (Tabela*)malloc(sizeof(Tabela));
     tb->ant = tb->prox = NULL;
     tb->pCampos = NULL;
@@ -100,7 +102,7 @@ void    inserirTabela(BancoDados *bd, Tabela *tab){
             bd->pTabelas = tab;
         else
         {
-            Tabela* atual = bd;
+            Tabela* atual = bd->pTabelas;
             while (atual->prox != NULL)
                 atual = atual->prox;
             atual->prox = tab;
@@ -109,7 +111,7 @@ void    inserirTabela(BancoDados *bd, Tabela *tab){
     }
 }
 
-Tabela* buscarTabela(Tabela *tab, char nome[50]){
+Tabela* buscarTabela(Tabela *tab, char nome[TF]){
     if(tab == NULL)
     {
         printf("Erro de Compilacao!!!");
@@ -144,7 +146,7 @@ void  liberarTabelas(Tabela* tab){
     }
 }
 
-void    removerTabela(BancoDados *bd, char nome[50]){
+void    removerTabela(BancoDados *bd, char nome[TF]){
     if (bd == NULL) 
         printf("Banco de Dados inexistente!!!");
     else{
@@ -181,6 +183,73 @@ void    removerTabela(BancoDados *bd, char nome[50]){
 
 
 //--------------------------------------------Lista Simples - Campos--------------------------------------------//
+Campos* criarCampo(char nome[TF], char tipo, char pk, char fk){
+    Campos *campo = (Campos*)malloc(sizeof(Campos));
+    campo->prox = NULL;
+    campo->fk = fk;
+    campo->pk = pk;
+    campo->tipo = tipo;
+    campo->pDados = NULL;
+    strcpy(campo->campo,nome);
+    return campo;
+}
+
+void   inserirCampo(Tabela *tab, Campos* campo){
+    if(tab == NULL || campo == NULL)
+    {
+        printf("Erro de Compilacao!!!");
+    }
+    else
+    {
+        if(tab->pCampos == NULL)
+            tab->pCampos = campo;
+        else
+        {
+            Campos  *atual = tab->pCampos;
+            while (atual->prox != NULL)
+                atual = atual->prox;
+            atual->prox = campo;
+        }
+    }
+}
+
+Campos* buscarCampo(Campos* campo, char* nome){
+    if(campo == NULL)
+        {
+            printf("Erro de Compilacao!!!");
+        }
+        else
+        {
+            while(campo->prox != NULL && (strcmp(campo->campo,nome)!=0) )
+            {
+                campo = campo->prox;
+            }
+            if(strcmp(campo->campo,nome)==0)
+            {
+                return campo;
+            }
+            printf("Nao existe!!!");
+        }
+        return NULL;
+}
+
+
+
+
+void   liberarCampos(Campos* campo){
+    if (campo == NULL) 
+        printf("Campo inexistente!!!");
+    else{
+        Tabela *atual=campo; 
+        while(atual!=NULL)
+        {
+            liberarValores(campo->pDados);
+            atual = atual->prox;
+            free(campo);
+            campo = atual;
+        }
+    }
+}
 //--------------------------------------------Lista Simples - Campos--------------------------------------------//
 
 
