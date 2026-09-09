@@ -44,15 +44,15 @@ union TipoValor
 BancoDados* criarBancoDados(char nome[TF]);
 Tabela* criarTabela(char nome[TF]);
 Campos* criarCampo(char* nome, char tipo, char pk, char fk);
-Valor* criarValor(char tipo, char* textoValor);   
+Valor* criarValor(TipoValor val);   
 
-void  inserirValor(Valor** lista, Valor* novo);        // sempre no fim, pra manter a ordem das linhas
-Valor* buscarValorPorIndice(Valor* lista, int indiceLinha);
-void  removerValorPorIndice(Valor** lista, int indiceLinha);
+void  inserirValor(Campos *campo, Valor* valor);        // sempre no fim, pra manter a ordem das linhas
+Valor* buscarValorPorIndice(Valor* valores, int indiceLinha);// começa por 1
+void  removerValorPorIndice(Campos *campo, int indiceLinha);
 void  atualizarValor(Valor* Valor, char tipo, char* novoTextoValor);
 int   compararValor(Valor* Valor, char tipo, char* valorComparar); // igualdade e BETWEEN no WHERE
 void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo
-void  liberarValores(Valor* lista);
+void  liberarValores(Valor* valores);
 
 void   inserirCampo(Tabela *tab, Campos* novo);
 Campos* buscarCampo(Campos *campo, char* nome);     // recebe tabela.pCampos
@@ -261,7 +261,7 @@ void   liberarCampos(Campos *campo){
     if (campo == NULL) 
         printf("Campo inexistente!!!");
     else{
-        Tabela *atual=campo; 
+        Campos *atual=campo; 
         while(atual!=NULL)
         {
             liberarValores(campo->pDados);
@@ -275,9 +275,80 @@ void   liberarCampos(Campos *campo){
 
 
 //--------------------------------------------Lista Simples - Valor--------------------------------------------//
-Valor* criarValor(char tipo, char* textoValor){
+Valor* criarValor(TipoValor val){
     Valor *valor = (Valor*)malloc(sizeof(Valor));
     valor->prox = NULL;
+    valor->valor = val;
     return valor;
 } 
+
+void  inserirValor(Campos *campo, Valor* valor){
+    if(campo == NULL || valor == NULL)
+    {
+        printf("Erro de Compilacao!!!");
+    }
+    else
+    {
+        if(campo->pDados == NULL)
+            campo->pDados = valor;
+        else
+        {
+            Valor  *atual = campo->pDados;
+            while (atual->prox != NULL)
+                atual = atual->prox;
+            atual->prox = campo;
+        }
+    }
+}
+
+Valor* buscarValorPorIndice(Valor* valores, int indiceLinha){
+    if (valores == NULL || indiceLinha < 0 ) 
+            printf("Erro!!");
+        else{
+            while(valores != NULL && indiceLinha>0){
+                valores = valores->prox;
+                indiceLinha--;
+            }
+            if(valores == NULL)
+                printf("Nao existe");
+        }
+    return valores;
+}
+
+void  removerValorPorIndice(Campos *campo, int indiceLinha){
+    if (campo == NULL || indiceLinha < 0 || campo->pDados == NULL) 
+            printf("Erro!!");
+    else{
+        Valor *atual = campo->pDados;
+        while(atual->prox != NULL && indiceLinha>1){
+            atual = atual->prox;
+            indiceLinha--;
+        }
+        if(indiceLinha>1)
+            printf("Nao existe");
+        else{
+            if(campo->pDados == atual)   
+                campo->pDados = atual->prox;
+            else
+            {
+
+            }    
+            free(atual);
+        }
+    }
+}
+
+void  liberarValores(Valor* valores){
+    if (valores == NULL) 
+        printf("Valores inexistentes!!!");
+    else{
+        Valor *atual=valores; 
+        while(atual!=NULL)
+        {
+            atual = atual->prox;
+            free(valores);
+            valores = atual;
+        }
+    }
+}
 //--------------------------------------------Lista Simples - Valor--------------------------------------------//
