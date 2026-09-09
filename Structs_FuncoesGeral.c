@@ -324,17 +324,6 @@ void  removerValorPorIndice(Campos *campo, int indiceLinha){
             atual = atual->prox;
             indiceLinha--;
         }
-        if(indiceLinha>1)
-            printf("Nao existe");
-        else{
-            if(campo->pDados == atual)   
-                campo->pDados = atual->prox;
-            else
-            {
-
-            }    
-            free(atual);
-        }
     }
 }
 
