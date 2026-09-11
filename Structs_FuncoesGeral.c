@@ -296,7 +296,7 @@ void  inserirValor(Campos *campo, Valor* valor){
             Valor  *atual = campo->pDados;
             while (atual->prox != NULL)
                 atual = atual->prox;
-            atual->prox = campo;
+            atual->prox = valor;
         }
     }
 }
@@ -320,10 +320,7 @@ void  removerValorPorIndice(Campos *campo, int indiceLinha){
             printf("Erro!!");
     else{
         Valor *atual = campo->pDados;
-        while(atual->prox != NULL && indiceLinha>1){
-            atual = atual->prox;
-            indiceLinha--;
-        }
+        buscarValorPorIndice(atual,indiceLinha-1);
     }
 }
 
