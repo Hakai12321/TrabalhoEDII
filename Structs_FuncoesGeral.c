@@ -19,9 +19,10 @@ struct Tabela{
 }typedef Tabela;
 
 typedef struct Campos {
-    char campo[TF],tipo,pk,fk;
+    char campo[TF],tipo,pk;
     struct Campos *prox;
     Valor *pDados;
+    Campos *fk;
 } Campos;
 
 struct Valor{
@@ -43,13 +44,14 @@ union TipoValor
 //--------------------------------------------Prototipo das Funções--------------------------------------------//
 BancoDados* criarBancoDados(char nome[TF]);
 Tabela* criarTabela(char nome[TF]);
-Campos* criarCampo(char* nome, char tipo, char pk, char fk);
+Campos* criarCampo(char* nome, char tipo, char pk);
 Valor* criarValor(TipoValor val);   
 
 void  inserirValor(Campos *campo, Valor* valor);        // sempre no fim, pra manter a ordem das linhas
 Valor* buscarValorPorIndice(Valor* valores, int indiceLinha);// começa por 1
 void  removerValorPorIndice(Campos *campo, int indiceLinha);
-void  atualizarValor(Valor* Valor, char tipo, char* novoTextoValor);
+TipoValor dequeueValor(Campos *campos);
+void  atualizarValor(Valor* Valor, TipoValor *novo);
 int   compararValor(Valor* Valor, char tipo, char* valorComparar); // igualdade e BETWEEN no WHERE
 void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo
 void  liberarValores(Valor* valores);
@@ -191,10 +193,10 @@ void    removerTabela(BancoDados *bd, char nome[TF]){
 
 
 //--------------------------------------------Lista Simples - Campos--------------------------------------------//
-Campos* criarCampo(char nome[TF], char tipo, char pk, char fk){
+Campos* criarCampo(char nome[TF], char tipo, char pk){
     Campos *campo = (Campos*)malloc(sizeof(Campos));
     campo->prox = NULL;
-    campo->fk = fk;
+    campo->fk = NULL;
     campo->pk = pk;
     campo->tipo = tipo;
     campo->pDados = NULL;
@@ -302,27 +304,51 @@ void  inserirValor(Campos *campo, Valor* valor){
 }
 
 Valor* buscarValorPorIndice(Valor* valores, int indiceLinha){
-    if (valores == NULL || indiceLinha < 0 ) 
-            printf("Erro!!");
-        else{
-            while(valores != NULL && indiceLinha>0){
-                valores = valores->prox;
-                indiceLinha--;
-            }
-            if(valores == NULL)
-                printf("Nao existe");
+    if (valores == NULL || indiceLinha < 1 ) 
+        printf("Erro!!");
+    else{
+        while(valores != NULL && indiceLinha>1){
+            valores = valores->prox;
+            indiceLinha--;
         }
+        if(valores == NULL)
+            printf("Nao existe");
+    }
     return valores;
 }
 
 void  removerValorPorIndice(Campos *campo, int indiceLinha){
-    if (campo == NULL || indiceLinha < 0 || campo->pDados == NULL) 
+    if (campo == NULL || indiceLinha < 1 || campo->pDados == NULL) 
             printf("Erro!!");
     else{
-        Valor *atual = campo->pDados;
-        buscarValorPorIndice(atual,indiceLinha-1);
+        Valor *ant,*atual = campo->pDados;
+        while(atual != NULL && indiceLinha>1){
+            ant = atual;
+            atual = atual->prox;
+            indiceLinha--;
+        }
+        if(atual == NULL)
+            printf("Nao existe");
+        else{
+            if(campo->pDados == atual){
+                campo->pDados = atual->prox;
+                free(atual);
+            }
+            else{
+                ant->prox = atual->prox;
+                free(atual);
+            }
+        }
     }
 }
+
+TipoValor dequeueValor(Campos *campos){
+    Valor *valor;
+    valor = buscarValorPorIndice(campos,1);
+    removerValorPorIndice(campos,1);
+    return valor->valor;
+}
+
 
 void  liberarValores(Valor* valores){
     if (valores == NULL) 
