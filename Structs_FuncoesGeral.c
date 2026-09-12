@@ -7,29 +7,6 @@
 
 #define TF 50
 //--------------------------------------------Structs--------------------------------------------//
-struct BancoDados{
-    char bancoDados[TF];
-    Tabela *pTabelas;
-}typedef BancoDados;
-
-struct Tabela{
-    char tabela[TF];
-    Tabela *ant,*prox;
-    Campos *pCampos;
-}typedef Tabela;
-
-typedef struct Campos {
-    char campo[TF],tipo,pk;
-    struct Campos *prox;
-    Valor *pDados;
-    Campos *fk;
-} Campos;
-
-struct Valor{
-    Valor *prox;
-    TipoValor valor;
-}typedef Valor;
-
 union TipoValor
 {
     int valorI;
@@ -37,7 +14,31 @@ union TipoValor
     char valorD[10];
     char valorC;
     char valorT[20];
-}typedef TipoValor;
+};
+typedef union TipoValor TipoValor;
+struct Valor{
+    struct Valor *prox;
+    TipoValor valor;
+};
+typedef struct Valor Valor;
+typedef struct Campos {
+    char campo[TF],tipo,pk;
+    struct Campos *prox;
+    Valor *pDados;
+    struct Campos *fk;
+};
+typedef struct Campos Campos;
+struct Tabela{
+    char tabela[TF];
+    struct Tabela *ant,*prox;
+    Campos *pCampos;
+};
+typedef struct Tabela Tabela;
+struct BancoDados{
+    char bancoDados[TF];
+    Tabela *pTabelas;
+};
+typedef struct BancoDados BancoDados;
 //--------------------------------------------Structs--------------------------------------------//
 
 
@@ -249,14 +250,14 @@ Campos* buscarCampoPK(Campos *campo){
         printf("Erro de Compilacao!!!");
     }
     else{
-        while(campo != NULL && campo->pk != 'S' && campo->pk != 's')
+        while(campo != NULL && campo->pk != 'S')
             campo = campo->prox;
 
         if(campo == NULL)
             printf("Nao existe Primary Key!");
-
-        return campo;
     }
+    return campo;
+
 }
 
 void   liberarCampos(Campos *campo){
@@ -344,7 +345,7 @@ void  removerValorPorIndice(Campos *campo, int indiceLinha){
 
 TipoValor dequeueValor(Campos *campos){
     Valor *valor;
-    valor = buscarValorPorIndice(campos,1);
+    valor = buscarValorPorIndice(campos->pDados,1);
     removerValorPorIndice(campos,1);
     return valor->valor;
 }
