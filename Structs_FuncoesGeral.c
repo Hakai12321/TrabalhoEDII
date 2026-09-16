@@ -45,7 +45,8 @@ typedef struct BancoDados BancoDados;
 //--------------------------------------------Prototipo das Funções--------------------------------------------//
 BancoDados* criarBancoDados(char nome[TF]);
 Tabela* criarTabela(char nome[TF]);
-Campos* criarCampo(char* nome, char tipo, char pk);
+Campos* criarCampoSemFk(char* nome, char tipo, char pk);
+Campos* criarCampoComFk(char* nome, char tipo, char pk, Tabela *tab);// enviar a tabela a ser referenciada
 Valor* criarValor(TipoValor val);   
 
 void  inserirValor(Campos *campo, Valor* valor);        // sempre no fim, pra manter a ordem das linhas
@@ -53,13 +54,13 @@ Valor* buscarValorPorIndice(Valor* valores, int indiceLinha);// começa por 1
 void  removerValorPorIndice(Campos *campo, int indiceLinha);
 TipoValor dequeueValor(Campos *campos);
 void  atualizarValor(Valor* Valor, TipoValor *novo);
-int   compararValor(Valor* Valor, char tipo, char* valorComparar); // igualdade e BETWEEN no WHERE
-void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo
+char   compararValor(Valor* valor,Valor* valorComparar, char tipo); // igualdade e BETWEEN no WHERE // no ultimo parametro vc manda Campo->tipo
+void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo // no ultimo parametro vc manda Campo->tipo
 void  liberarValores(Valor* valores);
 
 void   inserirCampo(Tabela *tab, Campos* novo);
 Campos* buscarCampo(Campos *campo, char* nome);     // recebe tabela.pCampos
-Campos* buscarCampoPK(Campos *lista);                // pra validar INSERT/UPDATE contra chave primária // recebe tabela.pCampos
+Campos* buscarCampoPK(Campos *lista);                // pra validar INSERT/UPDATE contra chave primária // recebe tabela->pCampos
 void   liberarCampos(Campos *campo);
 
 void    inserirTabela(BancoDados *bd, Tabela* nova);
@@ -194,7 +195,7 @@ void    removerTabela(BancoDados *bd, char nome[TF]){
 
 
 //--------------------------------------------Lista Simples - Campos--------------------------------------------//
-Campos* criarCampo(char nome[TF], char tipo, char pk){
+Campos* criarCampoSemFk(char* nome, char tipo, char pk){
     Campos *campo = (Campos*)malloc(sizeof(Campos));
     campo->prox = NULL;
     campo->fk = NULL;
@@ -202,6 +203,17 @@ Campos* criarCampo(char nome[TF], char tipo, char pk){
     campo->tipo = tipo;
     campo->pDados = NULL;
     strcpy(campo->campo,nome);
+    return campo;
+}
+
+Campos* criarCampoComFk(char* nome, char tipo, char pk, Tabela *tab){
+    Campos *campo = (Campos*)malloc(sizeof(Campos));
+    campo->prox = NULL;
+    campo->pk = pk;
+    campo->tipo = tipo;
+    campo->pDados = NULL;
+    strcpy(campo->campo,nome);
+    campo->fk = buscarCampoPK(tab->pCampos);
     return campo;
 }
 
@@ -350,6 +362,37 @@ TipoValor dequeueValor(Campos *campos){
     return valor->valor;
 }
 
+char   compararValor(Valor* valor, Valor* valorComparar, char tipo){
+    switch (tipo) {
+        case 'I':
+            return valor->valor.valorI == valorComparar->valor.valorI;
+        case 'N': 
+            return valor->valor.valorN == valorComparar->valor.valorN;
+        case 'D':
+            return strcmp(valor->valor.valorD, valorComparar->valor.valorD) == 0;
+        case 'C':
+            return valor->valor.valorC == valorComparar->valor.valorC;
+        case 'T':
+            return strcmp(valor->valor.valorT, valorComparar->valor.valorT) == 0;
+        default:
+            return 0;
+    }
+}
+
+void  imprimirValor(Valor* valor, char tipo){
+    switch (toupper(tipo)) {
+        case 'I':
+            printf("%d",valor->valor.valorI);
+        case 'N': 
+            printf("%.2f",valor->valor.valorN);
+        case 'D':
+            printf("%s",valor->valor.valorD);
+        case 'C':
+            printf("%c",valor->valor.valorC);
+        case 'T':
+            printf("%s",valor->valor.valorT);
+    } 
+}
 
 void  liberarValores(Valor* valores){
     if (valores == NULL) 
