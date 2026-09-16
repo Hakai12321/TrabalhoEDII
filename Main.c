@@ -1,7 +1,3 @@
-#include "Descritor_BancoDados.c"
-#include "ListaDupla_Tabela.c"
-#include "ListaSimples_Campos.c"
-#include "ListaSimples_Valor.c"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

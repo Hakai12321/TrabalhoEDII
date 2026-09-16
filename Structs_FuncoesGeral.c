@@ -21,7 +21,7 @@ struct Valor{
     TipoValor valor;
 };
 typedef struct Valor Valor;
-typedef struct Campos {
+struct Campos {
     char campo[TF],tipo,pk;
     struct Campos *prox;
     Valor *pDados;
@@ -356,14 +356,14 @@ void  removerValorPorIndice(Campos *campo, int indiceLinha){
 }
 
 TipoValor dequeueValor(Campos *campos){
-    Valor *valor;
-    valor = buscarValorPorIndice(campos->pDados,1);
-    removerValorPorIndice(campos,1);
-    return valor->valor;
+    Valor *valor = buscarValorPorIndice(campos->pDados, 1);
+    TipoValor copia = valor->valor;
+    removerValorPorIndice(campos, 1);
+    return copia;
 }
 
 char   compararValor(Valor* valor, Valor* valorComparar, char tipo){
-    switch (tipo) {
+    switch (toupper(tipo)) {
         case 'I':
             return valor->valor.valorI == valorComparar->valor.valorI;
         case 'N': 
@@ -383,12 +383,16 @@ void  imprimirValor(Valor* valor, char tipo){
     switch (toupper(tipo)) {
         case 'I':
             printf("%d",valor->valor.valorI);
+            break;
         case 'N': 
             printf("%.2f",valor->valor.valorN);
+            break;
         case 'D':
             printf("%s",valor->valor.valorD);
+            break;
         case 'C':
             printf("%c",valor->valor.valorC);
+            break;
         case 'T':
             printf("%s",valor->valor.valorT);
     } 
