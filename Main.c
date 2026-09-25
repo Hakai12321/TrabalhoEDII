@@ -48,7 +48,7 @@ void insert(BancoDados *bd, char aux[TF]);
 void lerAteWhere(char frase[TF],char colval[TF]);
 void converteDado(char tipoDados,char valor[TF],TipoValor *dado);
 void lerSet(Fila **F1,Fila **F2, Tabela *auxTab,char frase[TF]);
-void update(BandoDados *bd,char frase[TF]);
+void update(BancoDados *bd,char frase[TF]);
 void lerWhere();
 void delete();
 void destruir(Fila **F1);
@@ -242,7 +242,6 @@ char lerArgs(BancoDados *bd, Fila **F1, char frase[TF], char tabela[TF])
     Nos Dado;
     Fila *F2;
     init(&F2);
-    int i = 1;
     char aux[TF], colunas[TF];
     lerPalavra(frase, aux);
     if (aux[0] != ' ' && aux[0] != '\0' && aux[0] != '\n')
@@ -272,8 +271,6 @@ char lerArgs(BancoDados *bd, Fila **F1, char frase[TF], char tabela[TF])
 
 char lerDados(BancoDados *bd, Fila *F1, char Tab[TF], char str[TF], Fila **F2)
 {
-    int i;
-    float f;
     Tabela *auxTab;
     Campos *auxCamp, *auxCampo;
     Nos Dados;
@@ -425,7 +422,7 @@ void converteDado(char tipoDados,char valor[TF],TipoValor *dado)
                         break;
                     case 'N':
                         f = atof(valor);
-                        dado->valorF = f;
+                        dado->valorN = f;
                         break;
                     case 'D':
                         strcpy(dado->valorD,valor);
@@ -490,15 +487,15 @@ void lerWhere(Campos **condCampo, Tabela *Tab, char *modo, TipoValor *valor, Tip
         if (*modo != 'B')
         {
             lerPalavra(frase, aux);
-            converteDado((*condCampo)->tipo, aux,   valor);
+            converteDado((*condCampo)->tipo, aux,valor);
         }
         else
         {
             lerPalavra(frase, aux);
-            converteDado((*condCampo)->tipo, aux,   valorIni);
+            converteDado((*condCampo)->tipo, aux,valorIni);
             lerPalavra(frase, aux);   //consome AND
             lerPalavra(frase, aux);
-            converteDado((*condCampo)->tipo, aux,   valorFin);
+            converteDado((*condCampo)->tipo, aux,valorFin);
         }
     }
 }
@@ -508,11 +505,10 @@ void update(BancoDados *bd,char frase[TF])
     Fila *F1,*F2,*Fcol,*Fval;
     init(&F1);
     init(&F2);
-    Nos col;
     Tabela *auxTab;
     Campos *campoCond, *campoPk;
     Valor *linhasPk,*valorAtual,*valorTroca;
-    char tabela[TF],aux[TF],modo;
+    char tabela[TF],modo;
     TipoValor valorCond,valorIni,valorFin;
     int linha = 1;
 
@@ -553,21 +549,21 @@ void delete(BancoDados *bd,char frase[TF])
     Tabela *auxTab;
     char aux[TF],modo;
     Campos *condCampo,*campoPk,*colunaPk;
-    Valor *linhaPk,*valorCond,*valorAtual;
+    Valor *linhaPk,*valorAtual;
     TipoValor valor,valorIni,valorFin;
     int linha = 1;
 
     lerPalavra(frase,aux);
     auxTab = buscarTabela(bd->pTabelas,aux);
     lerPalavra(frase,aux); //consome WHERE
-    lerWhere(&condCampo,auxTab,&modo,&valorCond,&valorIni,&valorFin,frase);
+    lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,frase);
     
-    campoPk = buscarCampoPk(auxTab->pCampos);
+    campoPk = buscarCampoPK(auxTab->pCampos);
     linhaPk = campoPk->pDados;
     while(linhaPk != NULL)
     {
         valorAtual = buscarValorPorIndice(condCampo->pDados,linha);
-        if(modo == 'N' || compararValor(valorAtual,condCampo->tipo,modo,valorCond,valorIni,valorFin))
+        if(modo == 'N' || compararValor(valorAtual,condCampo->tipo,modo,valor,valorIni,valorFin))
         {
             colunaPk = auxTab->pCampos;
             while(colunaPk != NULL)
@@ -607,18 +603,18 @@ void executar(BancoDados *bd)
             update(bd, str);
             break;
         case 'D':
-            Delete(bd, str);
+            delete(bd, str);
             break;
         case 'S':
-            Select(bd, str);
+            select(bd, str);
             break;
         case '*':
-            SelectALL(bd, str);
+            selectAll(bd, str);
             break;
         case 'N':
             break;
         }
-        getch(tecla);
+        tecla = getch();
         gets(str);
         instrucao = lerInstrucao(str);
     } while (tecla != 27);
