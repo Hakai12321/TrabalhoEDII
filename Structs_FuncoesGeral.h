@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 
-#define TF 50
+#define TF 200
 //--------------------------------------------Structs--------------------------------------------//
 union TipoValor
 {
@@ -54,7 +54,7 @@ Valor* buscarValorPorIndice(Valor* valores, int indiceLinha);// começa por 1
 void  removerValorPorIndice(Campos *campo, int indiceLinha);
 TipoValor dequeueValor(Campos *campos);
 void  atualizarValor(Valor* Valor, TipoValor *novo);
-char   compararValor(Valor* valor,Valor* valorComparar, char tipo); // igualdade e BETWEEN no WHERE // no ultimo parametro vc manda Campo->tipo
+char compararValor(Valor *valorAtual, char tipo, char modo, TipoValor valorCond, TipoValor valorIni, TipoValor valorFin); // igualdade e BETWEEN no WHERE // no ultimo parametro vc manda Campo->tipo
 void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo // no ultimo parametro vc manda Campo->tipo
 void  liberarValores(Valor* valores);
 
@@ -362,21 +362,85 @@ TipoValor dequeueValor(Campos *campos){
     return copia;
 }
 
-char   compararValor(Valor* valor, Valor* valorComparar, char tipo){
-    switch (toupper(tipo)) {
+void atualizarValor(Valor *valor, TipoValor *novo)
+{
+    valor->valor = *novo;
+}
+
+char compararValor(Valor *valorAtual, char tipo, char modo, TipoValor valorCond, TipoValor valorIni, TipoValor valorFin)
+{
+    int i;
+    float f;
+    char aux[TF];
+    switch (tipo)
+    {
         case 'I':
-            return valor->valor.valorI == valorComparar->valor.valorI;
-        case 'N': 
-            return valor->valor.valorN == valorComparar->valor.valorN;
+            i = valorAtual->valor.valorI;
+            switch (modo)
+            {
+                case '=': return i == valorCond.valorI;
+                case '!': return i != valorCond.valorI;
+                case '>': return i >  valorCond.valorI;
+                case '<': return i <  valorCond.valorI;
+                case 'M': return i >= valorCond.valorI;
+                case 'm': return i <= valorCond.valorI;
+                case 'B': return i >= valorIni.valorI && i <= valorFin.valorI;
+            }
+            break;
+        case 'N':
+            f = valorAtual->valor.valorN;
+            switch (modo)
+            {
+                case '=': return f == valorCond.valorN;
+                case '!': return f != valorCond.valorN;
+                case '>': return f >  valorCond.valorN;
+                case '<': return f <  valorCond.valorN;
+                case 'M': return f >= valorCond.valorN;
+                case 'm': return f <= valorCond.valorN;
+                case 'B': return f >= valorIni.valorN && f <= valorFin.valorN;
+            }
+            break;
         case 'D':
-            return strcmp(valor->valor.valorD, valorComparar->valor.valorD) == 0;
+            strcpy(aux,valorAtual->valor.valorD);
+            switch (modo)
+            {
+                case '=': return strcmp(aux, valorCond.valorD) == 0;
+                case '!': return strcmp(aux, valorCond.valorD) != 0;
+                case '>': return strcmp(aux, valorCond.valorD) >  0;
+                case '<': return strcmp(aux, valorCond.valorD) <  0;
+                case 'M': return strcmp(aux, valorCond.valorD) >= 0;
+                case 'm': return strcmp(aux, valorCond.valorD) <= 0;
+                case 'B': return strcmp(aux, valorIni.valorD) >= 0 && strcmp(aux, valorFin.valorD) <= 0;
+            }
+            break;
         case 'C':
-            return valor->valor.valorC == valorComparar->valor.valorC;
+            aux[0] = valorAtual->valor.valorC;
+            switch (modo)
+            {
+                case '=': return aux[0] == valorCond.valorC;
+                case '!': return aux[0] != valorCond.valorC;
+                case '>': return aux[0] >  valorCond.valorC;
+                case '<': return aux[0] <  valorCond.valorC;
+                case 'M': return aux[0] >= valorCond.valorC;
+                case 'm': return aux[0] <= valorCond.valorC;
+                case 'B': return aux[0] >= valorIni.valorC && aux[0] <= valorFin.valorC;
+            }
+            break;
         case 'T':
-            return strcmp(valor->valor.valorT, valorComparar->valor.valorT) == 0;
-        default:
-            return 0;
+            strcpy(aux,valorAtual->valor.valorT);
+            switch (modo)
+            {
+                case '=': return strcmp(aux, valorCond.valorT) == 0;
+                case '!': return strcmp(aux, valorCond.valorT) != 0;
+                case '>': return strcmp(aux, valorCond.valorT) >  0;
+                case '<': return strcmp(aux, valorCond.valorT) <  0;
+                case 'M': return strcmp(aux, valorCond.valorT) >= 0;
+                case 'm': return strcmp(aux, valorCond.valorT) <= 0;
+                case 'B': return strcmp(aux, valorIni.valorT) >= 0 && strcmp(aux, valorFin.valorT) <= 0;
+            }
+            break;
     }
+    return 0;
 }
 
 void  imprimirValor(Valor* valor, char tipo){
