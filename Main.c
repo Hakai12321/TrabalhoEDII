@@ -5,6 +5,7 @@
 #include "meuconio.h"
 #include "Structs_FuncoesGeral.h"
 #define TF 200
+#define TAM_SCRIPT 17000
 
 //----------INCLUDES--------------
 
@@ -53,6 +54,15 @@ void lerWhere();
 void delete();
 void destruir(Fila **F1);
 void selectAll();
+void LerBloco(char *frase, char *aux);
+void LerItemDDL(char *frase, char *aux);
+void LerComandoDDL(char *frase, char *comando);
+char ConverterTipoSQL(char *tipoSQL);
+void ProcessarConstraintPK(Tabela *tab, char *item);
+void ProcessarCreateTable(BancoDados *bd, char *comando);
+void ProcessarAlterTable(BancoDados *bd, char *comando);
+void ProcessarComandoDDL(BancoDados **bd, char *comando);
+BancoDados* LerScript(char *nomeArquivo);
 
 
 void enqueue(Fila **F1, Nos Dado)
@@ -588,12 +598,299 @@ void select()
 
 }
 
-void lerScript()
+// ========== leitura de script  ========== //
+
+
+void LerBloco(char *frase, char *aux)
 {
-
-
+    int i = 0, j = 0, prof;
+    while (frase[i] != '(' && frase[i] != '\0') 
+        i++;
+    i++;
+    prof = 1;
+    while (prof > 0 && frase[i] != '\0')
+    {
+        if (frase[i] == '(')
+            prof++;
+        else 
+            if (frase[i] == ')') 
+                prof--;
+        if (prof > 0) { 
+            aux[j] = frase[i]; 
+            j++;
+        }
+        i++;
+    }
+    aux[j] = '\0';
+    int k = 0;
+    while (frase[i] != '\0') { 
+        frase[k] = frase[i]; 
+        i++; 
+        k++; 
+    }
+    frase[k] = '\0';
 }
 
+
+void LerItemDDL(char *frase, char *aux)
+{
+    int i = 0, j = 0, prof = 0;
+    while (frase[i] == ' ') 
+        i++;  
+
+    while (frase[i] != '\0' && !(frase[i] == ',' && prof == 0))
+    {
+        if (frase[i] == '(') 
+            prof++;
+        else 
+            if (frase[i] == ')') 
+                prof--;
+        aux[j] = frase[i];
+        i++;
+        j++;
+    }
+
+    while (j > 0 && aux[j-1] == ' ') 
+        j--;
+
+    aux[j] = '\0';
+
+    if (frase[i] == ',') 
+        i++;
+    if (frase[i] == ' ') 
+        i++;
+
+    int k = 0;
+
+    while (frase[i] != '\0') { 
+        frase[k] = frase[i]; 
+        i++; 
+        k++; 
+    }
+    frase[k] = '\0';
+}
+
+
+void LerComandoDDL(char *frase, char *comando)
+{
+    int i = 0, j = 0, ultimoEraEspaco = 1;
+
+    while (frase[i] != ';' && frase[i] != '\0')
+    {
+        char c = frase[i];
+        if (c == '\n' || c == '\r' || c == '\t') c = ' ';
+
+        if (c == ' ')
+        {
+            if (!ultimoEraEspaco) 
+            { 
+                comando[j] = ' '; 
+                j++; 
+                ultimoEraEspaco = 1; 
+            }
+        }
+        else { 
+                comando[j] = c; 
+                j++; 
+                ultimoEraEspaco = 0; 
+            }
+        i++;
+    }
+    if (j > 0 && comando[j-1] == ' ') j--;
+    comando[j] = '\0';
+
+    if (frase[i] == ';') 
+        i++;
+    while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t') 
+        i++;
+
+    int k = 0;
+    while (frase[i] != '\0') { 
+        frase[k] = frase[i];
+        i++; 
+        k++; 
+    }
+    frase[k] = '\0';
+}
+
+
+char ConverterTipoSQL(char *tipoSQL)
+{
+    char nome[TF],c;
+    int i = 0;
+
+    while (tipoSQL[i] != '(' && tipoSQL[i] != '\0')
+    {
+        nome[i] = tipoSQL[i];
+        i++;
+    }
+    nome[i] = '\0';
+
+    if (strcmp(nome, "INTEGER") == 0) 
+        c = 'I';
+    if (strcmp(nome, "DATE") == 0) 
+        c = 'D';
+    if (strcmp(nome, "NUMERIC") == 0) 
+        c = 'N';
+    if (strcmp(nome, "CHARACTER") == 0)
+    {
+        if (tipoSQL[i] == '(' && atoi(&tipoSQL[i + 1]) == 1)
+            c = 'C';    
+        else
+            c = 'T';                // CHARACTER(N>1) vira texto 
+    }
+    else
+        c = 'T';
+    return c;
+}
+
+
+void ProcessarConstraintPK(Tabela *tab, char *item)
+{
+    char aux[TAM_SCRIPT], colunas[TAM_SCRIPT], nomeColuna[TAM_SCRIPT];
+    lerPalavra(item, aux);     // CONSTRAINT 
+    lerPalavra(item, aux);     // nome da constraint 
+    lerPalavra(item, aux);     // PRIMARY 
+    lerPalavra(item, aux);     // KEY 
+    lerPalavra(item, colunas);
+
+    while (colunas[0] != '\0')
+    {
+        lerColuna(colunas, nomeColuna);
+        Campos *c = buscarCampo(tab->pCampos, nomeColuna);
+        if (c != NULL) 
+            c->pk = 'S';
+    }
+}
+
+
+void ProcessarCreateTable(BancoDados *bd, char *comando)
+{
+    char aux[TAM_SCRIPT], nomeTabela[TF], bloco[TAM_SCRIPT], blocoOriginal[TAM_SCRIPT], item[TAM_SCRIPT];
+
+    lerPalavra(comando, aux);      // CREATE
+    lerPalavra(comando, aux);      // TABLE
+    lerPalavra(comando, nomeTabela);
+
+    Tabela *tab = criarTabela(nomeTabela);
+
+    LerBloco(comando, bloco);
+    strcpy(blocoOriginal, bloco); // GUARDA COPIA
+
+    //CRIA COLUNAS
+    while (bloco[0] != '\0')
+    {
+        LerItemDDL(bloco, item);
+
+        char itemCopia[TAM_SCRIPT], primeira[TAM_SCRIPT];
+        strcpy(itemCopia, item);
+        lerPalavra(itemCopia, primeira);
+
+        if (strcmp(primeira, "CONSTRAINT") != 0)
+        {
+            char nomeColuna[TF], tipoSQL[TAM_SCRIPT];
+            lerPalavra(item, nomeColuna);
+            lerPalavra(item, tipoSQL);
+
+            char tipoInterno = ConverterTipoSQL(tipoSQL);
+            Campos *campo = criarCampo(nomeColuna, tipoInterno, 'N');
+            inserirCampo(tab, campo);
+        }
+    }
+
+    // COLOCA PK
+    strcpy(bloco, blocoOriginal);
+    while (bloco[0] != '\0')
+    {
+        LerItemDDL(bloco, item);
+
+        char itemCopia[TAM_SCRIPT], primeira[TAM_SCRIPT];
+        strcpy(itemCopia, item);
+        lerPalavra(itemCopia, primeira);
+
+        if (strcmp(primeira, "CONSTRAINT") == 0)
+            ProcessarConstraintPK(tab, item);
+    }
+
+    inserirTabela(bd, tab);
+}
+
+void ProcessarAlterTable(BancoDados *bd, char *comando)
+{
+    char aux[TAM_SCRIPT], nomeTabela[TF], nomeColuna[TAM_SCRIPT], nomeTabelaRef[TF], nomeColunaRef[TAM_SCRIPT];
+
+    lerPalavra(comando, aux);          //ALTER
+    lerPalavra(comando, aux);          //TABLE
+    lerPalavra(comando, nomeTabela);
+    lerPalavra(comando, aux);          //ADD
+    lerPalavra(comando, aux);          //CONSTRAINT
+    lerPalavra(comando, aux);          //NOME DA CONSTRAINT
+    lerPalavra(comando, aux);          //FOREIGN
+    lerPalavra(comando, aux);          //KEY
+    lerPalavra(comando, nomeColuna);   
+    lerPalavra(comando, aux);          //REFERENCES
+    lerPalavra(comando, nomeTabelaRef);
+    lerPalavra(comando, nomeColunaRef); 
+
+    Tabela *tab = buscarTabela(bd->pTabelas, nomeTabela);
+    Tabela *tabRef = buscarTabela(bd->pTabelas, nomeTabelaRef);
+    Campos *campo = buscarCampo(tab->pCampos, nomeColuna);
+    Campos *campoRef = buscarCampo(tabRef->pCampos, nomeColunaRef);
+
+    campo->fk = campoRef;
+}
+
+void ProcessarComandoDDL(BancoDados **bd, char *comando)
+{
+    char copia[TAM_SCRIPT], p1[TAM_SCRIPT], p2[TAM_SCRIPT];
+    strcpy(copia, comando);
+    lerPalavra(copia, p1);
+    lerPalavra(copia, p2);
+
+    if (strcmp(p1, "CREATE") == 0 && strcmp(p2, "DATABASE") == 0)
+    {
+        char nome[TF];
+        lerPalavra(copia, nome);
+        *bd = criarBancoDados(nome);
+    }
+    else if (strcmp(p1, "CREATE") == 0 && strcmp(p2, "TABLE") == 0)
+    {
+        ProcessarCreateTable(*bd, comando);
+    }
+    else if (strcmp(p1, "ALTER") == 0 && strcmp(p2, "TABLE") == 0)
+    {
+        ProcessarAlterTable(*bd, comando);
+    }
+}
+
+BancoDados* LerScript(char *nomeArquivo)  // ler com fgets
+{
+    FILE *arq = fopen(nomeArquivo, "r");
+
+    char conteudo[TAM_SCRIPT];
+    int tam = 0, ch;
+    while ((ch = fgetc(arq)) != EOF && tam < TAM_SCRIPT - 1)
+    {
+        conteudo[tam] = (char) ch;
+        tam++;
+    }
+    conteudo[tam] = '\0';
+    fclose(arq);
+
+    BancoDados *bd = NULL;
+    char comando[TAM_SCRIPT];
+
+    while (conteudo[0] != '\0')
+    {
+        LerComandoDDL(conteudo, comando);
+        if (comando[0] != '\0')
+            ProcessarComandoDDL(&bd, comando);
+    }
+
+    return bd;
+}
+
+// ========== acaba leitura de script  ========== //
 
 void executar(BancoDados *bd)
 {
