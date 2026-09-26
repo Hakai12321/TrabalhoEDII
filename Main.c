@@ -549,7 +549,7 @@ void delete(BancoDados *bd,char frase[TF])
     Tabela *auxTab;
     char aux[TF],modo;
     Campos *condCampo,*campoPk,*colunaPk;
-    Valor *linhaPk,*valorAtual;
+    Valor *valorAtual;
     TipoValor valor,valorIni,valorFin;
     int linha = 1;
 
@@ -559,8 +559,7 @@ void delete(BancoDados *bd,char frase[TF])
     lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,frase);
     
     campoPk = buscarCampoPK(auxTab->pCampos);
-    linhaPk = campoPk->pDados;
-    while(linhaPk != NULL)
+    while(buscarValorPorIndice(campoPk->pDados,linha))
     {
         valorAtual = buscarValorPorIndice(condCampo->pDados,linha);
         if(modo == 'N' || compararValor(valorAtual,condCampo->tipo,modo,valor,valorIni,valorFin))
@@ -575,13 +574,23 @@ void delete(BancoDados *bd,char frase[TF])
         }
         else
             linha++;
-        linhaPk = linhaPk->prox;
     }
     printf("\nDelete concluido!\n");
 }
 
 void selectAll()
 {
+
+}
+
+void select()
+{
+
+}
+
+void lerScript()
+{
+
 
 }
 
@@ -623,5 +632,12 @@ void executar(BancoDados *bd)
 
 int main()
 {
+    char arq[TF];
+    printf("Arquivo: ");
+    gets(arq);
+    BancoDados *bd;
 
+    bd = lerScript(arq);
+    executar(bd);
+    
 }
