@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <conio.h>
-#include "meuconio.h"
 #include "Structs_FuncoesGeral.h"
 #define TF 200
 #define TAM_SCRIPT 17000
@@ -1076,7 +1075,7 @@ void ProcessarCreateTable(BancoDados *bd, char *comando)
             lerPalavra(item, tipoSQL);
 
             char tipoInterno = ConverterTipoSQL(tipoSQL);
-            Campos *campo = criarCampo(nomeColuna, tipoInterno, 'N');
+            Campos *campo = criarCampoSemFk(nomeColuna, tipoInterno, 'N');
             inserirCampo(tab, campo);
         }
     }
