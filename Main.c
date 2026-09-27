@@ -328,7 +328,7 @@ char lerDados(BancoDados *bd, Fila *F1, char Tab[TF], char str[TF], Fila **F2)
     Tabela *auxTab;
     Campos *auxCamp, *auxCampo;
     Nos Dados;
-    char aux[TF],valores[TF];
+    char aux[TF],valores[TF],flag = 1;
     auxTab = buscarTabela(bd->pTabelas, Tab);
     auxCamp = auxTab->pCampos;
     lerPalavra(str, aux);
@@ -338,7 +338,7 @@ char lerDados(BancoDados *bd, Fila *F1, char Tab[TF], char str[TF], Fila **F2)
         strcpy(valores,aux);
         if (isEmpty(F1))
         {
-            while (auxCamp != NULL)
+            while (auxCamp != NULL && flag)
             {
                 lerColuna(valores,aux);
                 Dados.Dado.TipoDados = auxCamp->tipo;
@@ -346,22 +346,24 @@ char lerDados(BancoDados *bd, Fila *F1, char Tab[TF], char str[TF], Fila **F2)
                 if (aux[0] == ' ' || aux[0] == '\0' || aux[0] == '\n')
                 {
                     printf("\nQuantidade de argumentos insuficientes!\n");
-                    return 0;
+                    flag = 0;
                 }
-                enqueue(&*F2, Dados);
-                auxCamp = auxCamp->prox;
+                if(flag)
+                {
+                    enqueue(&*F2, Dados);
+                    auxCamp = auxCamp->prox;
+                }
             }
             lerPalavra(str, aux);
             if (aux[0] != ' ' && aux[0] != '\0' && aux[0] != '\n')
             {
                 printf("\nQuantidade de argumentos excedentes!\n");
-                return 0;
+                flag = 0;
             }
-            return 1;
         }
         else
         {
-            while (F1 != NULL)
+            while (F1 != NULL && flag)
             {
                 auxCampo = buscarCampo(auxCamp, F1->Nos.Arg.Campo->campo);
                 if (auxCampo->tipo == F1->Nos.Arg.Campo->tipo)
@@ -372,31 +374,35 @@ char lerDados(BancoDados *bd, Fila *F1, char Tab[TF], char str[TF], Fila **F2)
                     if (aux[0] == ' ' || aux[0] == '\0' || aux[0] == '\n')
                     {
                         printf("\nQuantidade de argumentos insuficientes!\n");
-                        return 0;
+                        flag = 0;
                     }
-                    enqueue(&*F2, Dados);
-                    F1 = F1->prox;
+                    if(flag)
+                    {
+                        enqueue(&*F2, Dados);
+                        F1 = F1->prox;
+                    }
                 }
                 else
                 {
                     printf("\nTipagem de dado incorreta para a coluna mencionada!\n");
-                    return 0;
+                    flag = 0;
                 }
             }
             lerPalavra(str, aux);
             if (aux[0] != ' ' && aux[0] != '\0' && aux[0] != '\n')
             {
                 printf("\nQuantidade de argumentos excedentes!\n");
-                return 0;
+                flag = 0;
             }
-            return 1;
         }
     }
     else
     {
         printf("\nComando '%s' invalido!\n", aux);
-        return 0;
+        flag = 0;
     }
+
+    return flag==1;
 }
 
 char validarTabela(BancoDados *bd, char frase[TF], char tabela[TF])
