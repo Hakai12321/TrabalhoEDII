@@ -219,7 +219,7 @@ void lerColuna(char frase[TF], char aux[TF])
 {
     int i = 0, j = 0;
 
-    while (frase[i] != ',' && frase[i] != '\0')
+    while (frase[i] != ',' && frase[i] != '\0' && frase[i] != ' ')
     {
         aux[i] = frase[i];
         i++;
@@ -599,9 +599,16 @@ void delete(BancoDados *bd,char frase[TF])
 char contemPonto(char frase[TF])
 {
     int i = 0;
-    while(frase[i] != '.' && frase[i] != '\0')
+
+    while(frase[i] != '\0')
+    {
+        if(frase[i] == '.')
+            return 1;
+
         i++;
-    return frase[i] == '.';
+    }
+
+    return 0;
 }
 
 
@@ -649,110 +656,132 @@ void imprimirValor(char campo[TF], Valor *valor, char tipo, int linha)
     }
 }
 
-void exibirDados(Tabela *auxTab,Fila *F1,Fila *F2,int qtde,Campos *condCampo,char modo,TipoValor valor,TipoValor valorIni,TipoValor valorFin,char where,Campos *Fk,Campos *Pk)
+void exibirDados(Tabela *auxTab, Fila *F1, Fila *F2, int qtde,Campos *condCampo, char modo, TipoValor valor,TipoValor valorIni, TipoValor valorFin, char where,Campos *Fk, Campos *Pk)
 {
-    Valor *linhaPk,*valorAtual,*valorPk,*valorFk;
-    Campos *campoPk,*auxCampo;
-    campoPk = buscarCampoPK(auxTab->pCampos);
-    linhaPk = campoPk->pDados;
-    int linha=1,i=1;
+    Valor *valorAtual,*valorPk,*valorFk;
+    Campos *campoPk,*campo;
+    Fila *FCol,*FTab;;
+
+    int linha=1,linhaFk,linhaPk=1,nLin=1,i;
+
     if(where == 'N')
     {
-        printf("\n----------*** %s ***----------\n",auxTab->tabela);
-        while(linhaPk != NULL)
-        {
-            printf("---------LINHA %d----------\n",linha);
-            auxCampo = F1->Nos.Arg.Campo;
+        campoPk = buscarCampoPK(auxTab->pCampos);
+        printf("\n----------*** %s ***----------\n", auxTab->tabela);
 
-            for(int j = 0; j<=qtde; j++)
+        valorAtual = campoPk->pDados;
+        while(valorAtual != NULL)
+        {
+            printf("---------LINHA %d----------\n", linha);
+            FCol = F1;
+            while(FCol != NULL)
             {
-                imprimirValor(auxCampo->campo,auxCampo->pDados,auxCampo->tipo,linha);
-                auxCampo->prox;
+                imprimirValor(FCol->Nos.Arg.Campo->campo,FCol->Nos.Arg.Campo->pDados,FCol->Nos.Arg.Campo->tipo,linha);
+                FCol = FCol->prox;
             }
+            valorAtual = valorAtual->prox;
             linha++;
-            linhaPk = linhaPk->prox;
         }
     }
     else if(where == 'W')
     {
-        printf("\n----------*** %s ***----------\n",auxTab->tabela);
-        linhaPk = Pk->pDados;
-        while(linhaPk != NULL)
-        {  
-            printf("---------LINHA %d----------\n",i);
-            valorAtual = buscarValorPorIndice(condCampo->pDados,linha);
+        printf("\n----------*** %s ***----------\n", auxTab->tabela);
+        while(buscarValorPorIndice(condCampo->pDados, linha) != NULL)
+        {
+            valorAtual = buscarValorPorIndice(condCampo->pDados, linha);
+
             if(compararValor(valorAtual,condCampo->tipo,modo,valor,valorIni,valorFin))
             {
-                auxCampo = F1->Nos.Arg.Campo;
-                for(int j = 0; j<=qtde; j++)
+                printf("---------LINHA %d----------\n", linha);
+                FCol = F1;
+                while(FCol != NULL)
                 {
-                    imprimirValor(auxCampo->campo,auxCampo->pDados,auxCampo->tipo,linha);
-                    auxCampo = auxCampo->prox;
+                    imprimirValor(FCol->Nos.Arg.Campo->campo,FCol->Nos.Arg.Campo->pDados,FCol->Nos.Arg.Campo->tipo,linha);
+                    FCol = FCol->prox;
                 }
-                i++;
             }
-            linhaPk = linhaPk->prox;
             linha++;
         }
     }
     else if(where == '.')
     {
-        
-        linhaPk = Pk->pDados;
-        while(linhaPk != NULL)
-        {  
-            campoPk = F2->Nos.Arg.Tab->pCampos;
-            valorPk = buscarValorPorIndice(Pk->pDados,linha);
-            valorFk = buscarValorPorIndice(Fk->pDados,linha);
-            printf("---------LINHA %d----------\n",i);
-            if(compararValor(valorPk,campoPk->tipo,'=',valorFk->valor,valorIni,valorFin))
+        printf("\n-----***%s***-----***%s***-----\n",F2->Nos.Arg.Tab->tabela,F2->prox->Nos.Arg.Tab->tabela);
+        valorPk = Pk->pDados;
+        while(valorPk != NULL)
+        {
+            linhaFk = 1;
+            valorFk = Fk->pDados;
+            while(valorFk != NULL)
             {
-                campoPk = F1->Nos.Arg.Campo;
-                for(int j = 0; j<=qtde; j++)
+                if(compararValor(valorPk,Pk->tipo,'=',valorFk->valor,valorIni,valorFin))
                 {
-                    imprimirValor(campoPk->campo,campoPk->pDados,campoPk->tipo,linha);
-                    auxCampo = auxCampo->prox;
+                    printf("---------LINHA %d----------\n",nLin);
+
+                    FCol = F1;
+                    FTab = F2;
+
+                    i = 0;
+
+                    while(i < qtde)
+                    {
+                        campo = FTab->Nos.Arg.Tab->pCampos;
+                        while(campo != NULL && campo != Pk)
+                            campo = campo->prox;
+                        if(campo == Pk)
+                        {
+                            imprimirValor(FCol->Nos.Arg.Campo->campo,FCol->Nos.Arg.Campo->pDados,FCol->Nos.Arg.Campo->tipo,linhaPk);
+                        }
+                        else
+                        {
+                            imprimirValor(FCol->Nos.Arg.Campo->campo,FCol->Nos.Arg.Campo->pDados,FCol->Nos.Arg.Campo->tipo,linhaFk);
+                        }
+                        FCol = FCol->prox;
+                        FTab = FTab->prox;
+                        i++;
+                    }
+                    nLin++;
                 }
-                i++;
+                valorFk = valorFk->prox;
+                linhaFk++;
             }
-            linhaPk = linhaPk->prox;
-            linha++;
+            valorPk = valorPk->prox;
+            linhaPk++;
         }
     }
     printf("+----------------------------------------+\n");
 }
 
-void lerPonto(char frase[TF],char tab[TF],char col[TF])
+void lerPonto(char frase[TF], char tab[TF], char col[TF])
 {
-    int i=0,j=0;
-    while(frase[i] != '.' && frase[i] != ' ')
-    {
-        tab[i] = frase[i];
-        i++;
-    }
-    tab[i] = '\0';
-    i++;
-    while(frase[i] != ' ' && frase[i] != ';' && frase[i] != '\0' && frase[i] != ',')
-    {
-        col[j] = frase[i];
-        i++;
-        j++;
-    }
-    col[j] = '\0';
-    if(frase[i] != '\0')
-    {
-        while(frase[i] == ' ' || frase[i] == ',')
-            i++;
-    }
-    j=0;
-    while(frase[i] != '\0')
-    {
-        frase[j] = frase[i];
-        i++;
-        j++;
-    }
-    frase[j] = '\0';
+    char aux[TF];
+    int i = 0;
+    int j = 0;
 
+    lerPalavra(frase, aux);
+
+    while(aux[i] != '.' && aux[i] != ',' && aux[i] != '\0')
+    {
+        tab[i] = aux[i];
+        i++;
+    }
+
+    tab[i] = '\0';
+
+    if(aux[i] == '.')
+    {
+        i++;
+
+        while(aux[i] != ',' && aux[i] != '\0')
+        {
+            col[j] = aux[i];
+            i++;
+            j++;
+        }
+
+        col[j] = '\0';
+    }
+    else
+        col[0] = '\0';
 }
 
 void wherePonto(BancoDados *bd,Campos **Fk,Campos **Pk,char frase[TF])
@@ -778,14 +807,15 @@ void select(BancoDados *bd,char frase[TF])
     char aux[TF],colunas[TF],copia[TF],modo,where,tab[TF],col[TF];
     colunas[0] = '\0';
     Nos coln,tabl;
-    Tabela *auxTab;
+    Tabela *auxTab=NULL;
     Campos *auxCampo,*condCampo;
     TipoValor valor,valorIni,valorFin;
     int qtde=0;
 
-    lerColuna(frase,aux);
-    strcpy(copia,aux);
-    if(strcmp(aux,"*")==0)
+    strcpy(copia,frase);
+    lerPalavra(copia,aux);
+
+    if(strcmp(aux,"FROM")==0)
     {
         lerPalavra(frase,aux); //consome FROM
         lerPalavra(frase,aux);
@@ -798,14 +828,14 @@ void select(BancoDados *bd,char frase[TF])
             qtde++;
             auxCampo = auxCampo->prox;
         }
+        lerPalavra(frase,aux);
         where = 'N';
         exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
     }
-    else if(contemPonto(copia))
+    else if(contemPonto(aux))
     {
-        
         lerPonto(frase,tab,col);
-        while(strcmp(tab,"FROM") != 0)
+        while(strcmp(tab,"FROM")!=0)
         {
             tabl.Arg.Tab = buscarTabela(bd->pTabelas,tab);
             coln.Arg.Campo = buscarCampo(tabl.Arg.Tab->pCampos,col);
@@ -823,8 +853,9 @@ void select(BancoDados *bd,char frase[TF])
     }
     else
     {
+        lerColuna(frase,aux);
         while(strcmp(aux,"FROM")!=0)
-        {   
+        {
             strcat(colunas,aux);
             strcat(colunas," ");
             lerColuna(frase,aux);
@@ -832,25 +863,24 @@ void select(BancoDados *bd,char frase[TF])
         lerPalavra(frase,aux); //ler tabela
         auxTab = buscarTabela(bd->pTabelas,aux);
         auxCampo = auxTab->pCampos;
-        while(colunas[0] != '\0')
+        lerColuna(colunas,aux);
+        while(aux[0] != '\0')
         {
-            lerPalavra(colunas,aux);
             coln.Arg.Campo = buscarCampo(auxCampo,aux);
-            qtde++;
             enqueue(&F1,coln);
+            qtde++;
+            lerPalavra(colunas,aux);
         }
         lerPalavra(frase,aux); //ler WHERE
         if(strcmp(aux,"WHERE") == 0)
         {
             lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,frase);
             where = 'W';
-            exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
         }
         else
-        {
             where = 'N';
-            exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
-        }
+
+        exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
     }
 
     destruir(&F1);
