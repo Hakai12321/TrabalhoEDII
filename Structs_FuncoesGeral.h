@@ -55,7 +55,6 @@ void  removerValorPorIndice(Campos *campo, int indiceLinha);
 TipoValor dequeueValor(Campos *campos);
 void  atualizarValor(Valor* Valor, TipoValor *novo);
 char compararValor(Valor *valorAtual, char tipo, char modo, TipoValor valorCond, TipoValor valorIni, TipoValor valorFin); // igualdade e BETWEEN no WHERE // no ultimo parametro vc manda Campo->tipo
-void  imprimirValor(Valor* Valor, char tipo);         // formata pra tela conforme o tipo // no ultimo parametro vc manda Campo->tipo
 void  liberarValores(Valor* valores);
 
 void   inserirCampo(Tabela *tab, Campos* novo);
@@ -272,6 +271,24 @@ Campos* buscarCampoPK(Campos *campo){
 
 }
 
+
+Campos* buscarCampoFK(Campos *campo){
+    if(campo == NULL)
+    {
+        printf("Erro de Compilacao!!!");
+    }
+    else{
+        while(campo != NULL && campo->fk == NULL)
+            campo = campo->prox;
+
+        if(campo == NULL)
+            printf("Nao existe Foreign Key!");
+    }
+    return campo;
+
+}
+
+
 void   liberarCampos(Campos *campo){
     if (campo == NULL) 
         printf("Campo inexistente!!!");
@@ -443,24 +460,6 @@ char compararValor(Valor *valorAtual, char tipo, char modo, TipoValor valorCond,
     return 0;
 }
 
-void  imprimirValor(Valor* valor, char tipo){
-    switch (toupper(tipo)) {
-        case 'I':
-            printf("%d",valor->valor.valorI);
-            break;
-        case 'N': 
-            printf("%.2f",valor->valor.valorN);
-            break;
-        case 'D':
-            printf("%s",valor->valor.valorD);
-            break;
-        case 'C':
-            printf("%c",valor->valor.valorC);
-            break;
-        case 'T':
-            printf("%s",valor->valor.valorT);
-    } 
-}
 
 void  liberarValores(Valor* valores){
     if (valores == NULL) 

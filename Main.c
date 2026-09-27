@@ -5,17 +5,20 @@
 #include "meuconio.h"
 #include "Structs_FuncoesGeral.h"
 #define TF 200
+#define TAM_SCRIPT 17000
 
 //----------INCLUDES--------------
 
 typedef struct TpNoArg
 {
     Campos *Campo;
+    Tabela *Tab;
 } TpNoArg;
 
 typedef struct TpNoDado
 {
     char TipoDados;
+    struct Campos *pk,*fk;
     TipoValor Tipo;
 } TpNoDado;
 
@@ -37,24 +40,41 @@ void enqueue(Fila **F1, Nos Dado);
 void dequeue(Fila **F1, Nos *Dado);
 void init(Fila **F1);
 char isEmpty(Fila *F1);
+void destruir(Fila **F1);
+
 void lerPalavra(char frase[TF], char aux[TF]);
 char lerInstrucao(char str[TF]);
 void lerColuna(char frase[TF], char aux[TF]);
 char validarColunas(Fila *F1);
+char validarTabela(BancoDados *bd, char frase[TF], char tabela[TF]);
+void converteDado(char tipoDados,char valor[TF],TipoValor *dado);
+
 char lerArgs(BancoDados *bd, Fila **F1, char frase[TF], char tabela[TF]);
 char lerDados(BancoDados *bd, Fila *F1, char Tab[TF], char str[TF], Fila **F2);
-char validarTabela(BancoDados *bd, char frase[TF], char tabela[TF]);
-void insert(BancoDados *bd, char aux[TF]);
-void lerAteWhere(char frase[TF],char colval[TF]);
-void converteDado(char tipoDados,char valor[TF],TipoValor *dado);
-void lerSet(Fila **F1,Fila **F2, Tabela *auxTab,char frase[TF]);
-void update(BancoDados *bd,char frase[TF]);
 void lerWhere(Campos **condCampo, Tabela *Tab, char *modo, TipoValor *valor, TipoValor *valorIni, TipoValor *valorFin, char frase[TF]);
-void delete(BancoDados *bd,char frase[TF]);
-void destruir(Fila **F1);
-void select(BancoDados *bd,char frase[TF])();
-char contemPonto(char frase[TF]);
+void lerAteWhere(char frase[TF],char colval[TF]);
 
+void insert(BancoDados *bd, char aux[TF]);
+void lerSet(Fila **F1,Fila **F2, Tabela *auxTab,char frase[TF]);
+
+void update(BancoDados *bd,char frase[TF]);
+void delete(BancoDados *bd,char frase[TF]);
+void select(BancoDados *bd,char frase[TF]);
+
+void imprimirValor(char campo[TF],Valor* valor, char tipo,int linha);
+char contemPonto(char frase[TF]);
+void exibirDados(Tabela *auxTab,Fila *F1,Fila *F2,int qtde,Campos *condCampo,char modo,TipoValor valor,TipoValor valorIni,TipoValor valorFin,char where,Campos *Fk,Campos *Pk);
+void lerPonto(char frase[TF],char tab[TF],char col[TF]);
+void wherePonto(BancoDados *bd,Campos **Fk,Campos **Pk,char frase[TF]);
+void LerBloco(char *frase, char *aux);
+void LerItemDDL(char *frase, char *aux);
+void LerComandoDDL(char *frase, char *comando);
+char ConverterTipoSQL(char *tipoSQL);
+void ProcessarConstraintPK(Tabela *tab, char *item);
+void ProcessarCreateTable(BancoDados *bd, char *comando);
+void ProcessarAlterTable(BancoDados *bd, char *comando);
+void ProcessarComandoDDL(BancoDados **bd, char *comando);
+BancoDados* LerScript(char *nomeArquivo);
 
 
 void enqueue(Fila **F1, Nos Dado)
@@ -127,7 +147,7 @@ void lerPalavra(char frase[TF], char aux[TF])
     }
     else
     {
-        while (frase[i] != ' ' && frase[i] != '\n' && frase[i] != '\0')
+        while (frase[i] != ' ' && frase[i] != '\n' && frase[i] != '\0' && frase[i] != ';')
         {
             aux[i] = frase[i];
             i++;
@@ -178,6 +198,17 @@ char lerInstrucao(char str[TF])
     }
     else if (strcmp(aux, "SELECT") == 0)
     {
+        lerPalavra(str, aux);
+        if (strcmp(aux, "*") == 0)
+        {
+            return '*';
+        }
+        while (aux[i] != '\0')
+            i++;
+        aux[i] = ' ';
+        aux[i + 1] = '\0';
+        strcat(aux, str);
+        strcpy(str, aux);
         return 'S';
     }
     printf("\nComando '%s' invalido!\n", aux);
@@ -188,7 +219,7 @@ void lerColuna(char frase[TF], char aux[TF])
 {
     int i = 0, j = 0;
 
-    while (frase[i] != ',' && frase[i] != '\0' && frase[i] != ' ')
+    while (frase[i] != ',' && frase[i] != '\0')
     {
         aux[i] = frase[i];
         i++;
@@ -374,7 +405,7 @@ void insert(BancoDados *bd, char aux[TF])
                             dequeue(&F1, &auxDados);
                         dequeue(&F2, &auxDados);
                     }
-                    printf("\nValores inseridos com sucesso!\n");
+                    printf("\n***Valores inseridos com sucesso!***\n");
             }
         }
         else
@@ -453,10 +484,7 @@ void lerWhere(Campos **condCampo, Tabela *Tab, char *modo, TipoValor *valor, Tip
     char aux[TF];
 
     *modo = 'N';
-
-    if (frase[0] != '\0')
-    {
-        lerPalavra(frase, aux);
+        lerPalavra(frase,aux);
         *condCampo = buscarCampo(Tab->pCampos, aux);
 
         lerPalavra(frase, aux);
@@ -488,7 +516,6 @@ void lerWhere(Campos **condCampo, Tabela *Tab, char *modo, TipoValor *valor, Tip
             lerPalavra(frase, aux);
             converteDado((*condCampo)->tipo, aux,valorFin);
         }
-    }
 }
 
 void update(BancoDados *bd,char frase[TF])
@@ -529,7 +556,7 @@ void update(BancoDados *bd,char frase[TF])
         linhasPk = linhasPk->prox;
         linha++;
     }
-    printf("\nUPDATE concluido!\n");
+    printf("\n***UPDATE concluido!***\n");
     destruir(&F1);
     destruir(&F2);
 }
@@ -566,32 +593,199 @@ void delete(BancoDados *bd,char frase[TF])
         else
             linha++;
     }
-    printf("\nDelete concluido!\n");
+    printf("\n***Delete concluido!***\n");
 }
-
 
 char contemPonto(char frase[TF])
 {
-    int i = 0
+    int i = 0;
     while(frase[i] != '.' && frase[i] != '\0')
         i++;
     return frase[i] == '.';
 }
 
 
+void imprimirValor(char campo[TF], Valor *valor, char tipo, int linha)
+{
+    if(valor == NULL || linha < 1)
+    {
+        printf("Erro!!\n");
+        return;
+    }
+
+    while(valor != NULL && linha > 1)
+    {
+        valor = valor->prox;
+        linha--;
+    }
+
+    if(valor == NULL)
+    {
+        printf("%s: null\n", campo);
+        return;
+    }
+
+    switch(toupper(tipo))
+    {
+        case 'I':
+            printf("%s: %d\n", campo, valor->valor.valorI);
+            break;
+
+        case 'N':
+            printf("%s: %.2f\n", campo, valor->valor.valorN);
+            break;
+
+        case 'D':
+            printf("%s: %s\n", campo, valor->valor.valorD);
+            break;
+
+        case 'C':
+            printf("%s: %c\n", campo, valor->valor.valorC);
+            break;
+
+        case 'T':
+            printf("%s: %s\n", campo, valor->valor.valorT);
+            break;
+    }
+}
+
+void exibirDados(Tabela *auxTab,Fila *F1,Fila *F2,int qtde,Campos *condCampo,char modo,TipoValor valor,TipoValor valorIni,TipoValor valorFin,char where,Campos *Fk,Campos *Pk)
+{
+    Valor *linhaPk,*valorAtual,*valorPk,*valorFk;
+    Campos *campoPk,*auxCampo;
+    campoPk = buscarCampoPK(auxTab->pCampos);
+    linhaPk = campoPk->pDados;
+    int linha=1,i=1;
+    if(where == 'N')
+    {
+        printf("\n----------*** %s ***----------\n",auxTab->tabela);
+        while(linhaPk != NULL)
+        {
+            printf("---------LINHA %d----------\n",linha);
+            auxCampo = F1->Nos.Arg.Campo;
+
+            for(int j = 0; j<=qtde; j++)
+            {
+                imprimirValor(auxCampo->campo,auxCampo->pDados,auxCampo->tipo,linha);
+                auxCampo->prox;
+            }
+            linha++;
+            linhaPk = linhaPk->prox;
+        }
+    }
+    else if(where == 'W')
+    {
+        printf("\n----------*** %s ***----------\n",auxTab->tabela);
+        linhaPk = Pk->pDados;
+        while(linhaPk != NULL)
+        {  
+            printf("---------LINHA %d----------\n",i);
+            valorAtual = buscarValorPorIndice(condCampo->pDados,linha);
+            if(compararValor(valorAtual,condCampo->tipo,modo,valor,valorIni,valorFin))
+            {
+                auxCampo = F1->Nos.Arg.Campo;
+                for(int j = 0; j<=qtde; j++)
+                {
+                    imprimirValor(auxCampo->campo,auxCampo->pDados,auxCampo->tipo,linha);
+                    auxCampo = auxCampo->prox;
+                }
+                i++;
+            }
+            linhaPk = linhaPk->prox;
+            linha++;
+        }
+    }
+    else if(where == '.')
+    {
+        
+        linhaPk = Pk->pDados;
+        while(linhaPk != NULL)
+        {  
+            campoPk = F2->Nos.Arg.Tab->pCampos;
+            valorPk = buscarValorPorIndice(Pk->pDados,linha);
+            valorFk = buscarValorPorIndice(Fk->pDados,linha);
+            printf("---------LINHA %d----------\n",i);
+            if(compararValor(valorPk,campoPk->tipo,'=',valorFk->valor,valorIni,valorFin))
+            {
+                campoPk = F1->Nos.Arg.Campo;
+                for(int j = 0; j<=qtde; j++)
+                {
+                    imprimirValor(campoPk->campo,campoPk->pDados,campoPk->tipo,linha);
+                    auxCampo = auxCampo->prox;
+                }
+                i++;
+            }
+            linhaPk = linhaPk->prox;
+            linha++;
+        }
+    }
+    printf("+----------------------------------------+\n");
+}
+
+void lerPonto(char frase[TF],char tab[TF],char col[TF])
+{
+    int i=0,j=0;
+    while(frase[i] != '.' && frase[i] != ' ')
+    {
+        tab[i] = frase[i];
+        i++;
+    }
+    tab[i] = '\0';
+    i++;
+    while(frase[i] != ' ' && frase[i] != ';' && frase[i] != '\0' && frase[i] != ',')
+    {
+        col[j] = frase[i];
+        i++;
+        j++;
+    }
+    col[j] = '\0';
+    if(frase[i] != '\0')
+    {
+        while(frase[i] == ' ' || frase[i] == ',')
+            i++;
+    }
+    j=0;
+    while(frase[i] != '\0')
+    {
+        frase[j] = frase[i];
+        i++;
+        j++;
+    }
+    frase[j] = '\0';
+
+}
+
+void wherePonto(BancoDados *bd,Campos **Fk,Campos **Pk,char frase[TF])
+{
+    char aux[TF],tab[TF],cond[TF];
+    Tabela *auxTab;
+    lerPonto(frase,tab,cond);
+    auxTab = buscarTabela(bd->pTabelas,tab);
+    *Pk = buscarCampo(auxTab->pCampos,cond); // nome da coluna da PK
+    lerPalavra(frase,aux); // consome '='
+    lerPonto(frase,tab,cond);
+    auxTab = buscarTabela(bd->pTabelas,tab);
+    *Fk = buscarCampo(auxTab->pCampos,cond); // nome da coluna da FK
+
+}
+
 void select(BancoDados *bd,char frase[TF])
 {
-    Fila *F1,F2;
+    Fila *F1,*F2;
+    Campos *Fk,*Pk;
+    init(&F2);
     init(&F1);
-    char aux[TF];
-    Nos coln,dados;
+    char aux[TF],colunas[TF],copia[TF],modo,where,tab[TF],col[TF];
+    colunas[0] = '\0';
+    Nos coln,tabl;
     Tabela *auxTab;
-    Campos *auxCampo;
-    int largura=0;
-    lerColuna(frase,aux);
+    Campos *auxCampo,*condCampo;
+    TipoValor valor,valorIni,valorFin;
+    int qtde=0;
 
-    
-    if(aux == "*")
+    lerColuna(frase,aux);
+    strcpy(copia,aux);
+    if(strcmp(aux,"*")==0)
     {
         lerPalavra(frase,aux); //consome FROM
         lerPalavra(frase,aux);
@@ -600,37 +794,374 @@ void select(BancoDados *bd,char frase[TF])
         while(auxCampo != NULL)
         {
             coln.Arg.Campo = auxCampo;
-            dados.Dado.TipoDados = auxCampo->tipo;
             enqueue(&F1,coln);
-            enqueue(&F2,dados);
+            qtde++;
             auxCampo = auxCampo->prox;
         }
+        where = 'N';
+        exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
     }
-    else if(contemPonto(aux))
+    else if(contemPonto(copia))
     {
-    
+        
+        lerPonto(frase,tab,col);
+        while(strcmp(tab,"FROM") != 0)
+        {
+            tabl.Arg.Tab = buscarTabela(bd->pTabelas,tab);
+            coln.Arg.Campo = buscarCampo(tabl.Arg.Tab->pCampos,col);
+            enqueue(&F1,coln);
+            enqueue(&F2,tabl);
+            qtde++;
+            lerPonto(frase,tab,col);
+        }
+        lerPalavra(frase,aux);
+        while(strcmp(aux,"WHERE")!=0)
+            lerPalavra(frase,aux);
+        wherePonto(bd,&Fk,&Pk,frase);
+        where = '.';
+        exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
     }
     else
     {
+        while(strcmp(aux,"FROM")!=0)
+        {   
+            strcat(colunas,aux);
+            strcat(colunas," ");
+            lerColuna(frase,aux);
+        }
+        lerPalavra(frase,aux); //ler tabela
+        auxTab = buscarTabela(bd->pTabelas,aux);
+        auxCampo = auxTab->pCampos;
+        while(colunas[0] != '\0')
+        {
+            lerPalavra(colunas,aux);
+            coln.Arg.Campo = buscarCampo(auxCampo,aux);
+            qtde++;
+            enqueue(&F1,coln);
+        }
+        lerPalavra(frase,aux); //ler WHERE
+        if(strcmp(aux,"WHERE") == 0)
+        {
+            lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,frase);
+            where = 'W';
+            exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
+        }
+        else
+        {
+            where = 'N';
+            exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
+        }
+    }
 
+    destruir(&F1);
+    destruir(&F2);
+    printf("\n***SELECT concluido!***\n");
+}
+
+//--------------SELCT------------------------//
+
+// ========== leitura de script  ========== //
+
+
+void LerBloco(char *frase, char *aux)
+{
+    int i = 0, j = 0, prof;
+    while (frase[i] != '(' && frase[i] != '\0') 
+        i++;
+    i++;
+    prof = 1;
+    while (prof > 0 && frase[i] != '\0')
+    {
+        if (frase[i] == '(')
+            prof++;
+        else 
+            if (frase[i] == ')') 
+                prof--;
+        if (prof > 0) { 
+            aux[j] = frase[i]; 
+            j++;
+        }
+        i++;
+    }
+    aux[j] = '\0';
+    int k = 0;
+    while (frase[i] != '\0') { 
+        frase[k] = frase[i]; 
+        i++; 
+        k++; 
+    }
+    frase[k] = '\0';
+}
+
+
+void LerItemDDL(char *frase, char *aux)
+{
+    int i = 0, j = 0, prof = 0;
+    while (frase[i] == ' ') 
+        i++;  
+
+    while (frase[i] != '\0' && !(frase[i] == ',' && prof == 0))
+    {
+        if (frase[i] == '(') 
+            prof++;
+        else 
+            if (frase[i] == ')') 
+                prof--;
+        aux[j] = frase[i];
+        i++;
+        j++;
+    }
+
+    while (j > 0 && aux[j-1] == ' ') 
+        j--;
+
+    aux[j] = '\0';
+
+    if (frase[i] == ',') 
+        i++;
+    if (frase[i] == ' ') 
+        i++;
+
+    int k = 0;
+
+    while (frase[i] != '\0') { 
+        frase[k] = frase[i]; 
+        i++; 
+        k++; 
+    }
+    frase[k] = '\0';
+}
+
+
+void LerComandoDDL(char *frase, char *comando)
+{
+    int i = 0, j = 0, ultimoEraEspaco = 1;
+
+    while (frase[i] != ';' && frase[i] != '\0')
+    {
+        char c = frase[i];
+        if (c == '\n' || c == '\r' || c == '\t') c = ' ';
+
+        if (c == ' ')
+        {
+            if (!ultimoEraEspaco) 
+            { 
+                comando[j] = ' '; 
+                j++; 
+                ultimoEraEspaco = 1; 
+            }
+        }
+        else { 
+                comando[j] = c; 
+                j++; 
+                ultimoEraEspaco = 0; 
+            }
+        i++;
+    }
+    if (j > 0 && comando[j-1] == ' ') j--;
+    comando[j] = '\0';
+
+    if (frase[i] == ';') 
+        i++;
+    while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t') 
+        i++;
+
+    int k = 0;
+    while (frase[i] != '\0') { 
+        frase[k] = frase[i];
+        i++; 
+        k++; 
+    }
+    frase[k] = '\0';
+}
+
+
+char ConverterTipoSQL(char *tipoSQL)
+{
+    char nome[TF],c;
+    int i = 0;
+
+    while (tipoSQL[i] != '(' && tipoSQL[i] != '\0')
+    {
+        nome[i] = tipoSQL[i];
+        i++;
+    }
+    nome[i] = '\0';
+
+    if (strcmp(nome, "INTEGER") == 0) 
+        c = 'I';
+    if (strcmp(nome, "DATE") == 0) 
+        c = 'D';
+    if (strcmp(nome, "NUMERIC") == 0) 
+        c = 'N';
+    if (strcmp(nome, "CHARACTER") == 0)
+    {
+        if (tipoSQL[i] == '(' && atoi(&tipoSQL[i + 1]) == 1)
+            c = 'C';    
+        else
+            c = 'T';                // CHARACTER(N>1) vira texto 
+    }
+    else
+        c = 'T';
+    return c;
+}
+
+
+void ProcessarConstraintPK(Tabela *tab, char *item)
+{
+    char aux[TAM_SCRIPT], colunas[TAM_SCRIPT], nomeColuna[TAM_SCRIPT];
+    lerPalavra(item, aux);     // CONSTRAINT 
+    lerPalavra(item, aux);     // nome da constraint 
+    lerPalavra(item, aux);     // PRIMARY 
+    lerPalavra(item, aux);     // KEY 
+    lerPalavra(item, colunas);
+
+    while (colunas[0] != '\0')
+    {
+        lerColuna(colunas, nomeColuna);
+        Campos *c = buscarCampo(tab->pCampos, nomeColuna);
+        if (c != NULL) 
+            c->pk = 'S';
     }
 }
 
-void lerScript()
+
+void ProcessarCreateTable(BancoDados *bd, char *comando)
 {
+    char aux[TAM_SCRIPT], nomeTabela[TF], bloco[TAM_SCRIPT], blocoOriginal[TAM_SCRIPT], item[TAM_SCRIPT];
 
+    lerPalavra(comando, aux);      // CREATE
+    lerPalavra(comando, aux);      // TABLE
+    lerPalavra(comando, nomeTabela);
 
+    Tabela *tab = criarTabela(nomeTabela);
+
+    LerBloco(comando, bloco);
+    strcpy(blocoOriginal, bloco); // GUARDA COPIA
+
+    //CRIA COLUNAS
+    while (bloco[0] != '\0')
+    {
+        LerItemDDL(bloco, item);
+
+        char itemCopia[TAM_SCRIPT], primeira[TAM_SCRIPT];
+        strcpy(itemCopia, item);
+        lerPalavra(itemCopia, primeira);
+
+        if (strcmp(primeira, "CONSTRAINT") != 0)
+        {
+            char nomeColuna[TF], tipoSQL[TAM_SCRIPT];
+            lerPalavra(item, nomeColuna);
+            lerPalavra(item, tipoSQL);
+
+            char tipoInterno = ConverterTipoSQL(tipoSQL);
+            Campos *campo = criarCampo(nomeColuna, tipoInterno, 'N');
+            inserirCampo(tab, campo);
+        }
+    }
+
+    // COLOCA PK
+    strcpy(bloco, blocoOriginal);
+    while (bloco[0] != '\0')
+    {
+        LerItemDDL(bloco, item);
+
+        char itemCopia[TAM_SCRIPT], primeira[TAM_SCRIPT];
+        strcpy(itemCopia, item);
+        lerPalavra(itemCopia, primeira);
+
+        if (strcmp(primeira, "CONSTRAINT") == 0)
+            ProcessarConstraintPK(tab, item);
+    }
+
+    inserirTabela(bd, tab);
 }
 
+void ProcessarAlterTable(BancoDados *bd, char *comando)
+{
+    char aux[TAM_SCRIPT], nomeTabela[TF], nomeColuna[TAM_SCRIPT], nomeTabelaRef[TF], nomeColunaRef[TAM_SCRIPT];
+
+    lerPalavra(comando, aux);          //ALTER
+    lerPalavra(comando, aux);          //TABLE
+    lerPalavra(comando, nomeTabela);
+    lerPalavra(comando, aux);          //ADD
+    lerPalavra(comando, aux);          //CONSTRAINT
+    lerPalavra(comando, aux);          //NOME DA CONSTRAINT
+    lerPalavra(comando, aux);          //FOREIGN
+    lerPalavra(comando, aux);          //KEY
+    lerPalavra(comando, nomeColuna);   
+    lerPalavra(comando, aux);          //REFERENCES
+    lerPalavra(comando, nomeTabelaRef);
+    lerPalavra(comando, nomeColunaRef); 
+
+    Tabela *tab = buscarTabela(bd->pTabelas, nomeTabela);
+    Tabela *tabRef = buscarTabela(bd->pTabelas, nomeTabelaRef);
+    Campos *campo = buscarCampo(tab->pCampos, nomeColuna);
+    Campos *campoRef = buscarCampo(tabRef->pCampos, nomeColunaRef);
+
+    campo->fk = campoRef;
+}
+
+void ProcessarComandoDDL(BancoDados **bd, char *comando)
+{
+    char copia[TAM_SCRIPT], p1[TAM_SCRIPT], p2[TAM_SCRIPT];
+    strcpy(copia, comando);
+    lerPalavra(copia, p1);
+    lerPalavra(copia, p2);
+
+    if (strcmp(p1, "CREATE") == 0 && strcmp(p2, "DATABASE") == 0)
+    {
+        char nome[TF];
+        lerPalavra(copia, nome);
+        *bd = criarBancoDados(nome);
+    }
+    else if (strcmp(p1, "CREATE") == 0 && strcmp(p2, "TABLE") == 0)
+    {
+        ProcessarCreateTable(*bd, comando);
+    }
+    else if (strcmp(p1, "ALTER") == 0 && strcmp(p2, "TABLE") == 0)
+    {
+        ProcessarAlterTable(*bd, comando);
+    }
+}
+
+BancoDados* LerScript(char *nomeArquivo)  // ler com fgets
+{
+    FILE *arq = fopen(nomeArquivo, "r");
+
+    char conteudo[TAM_SCRIPT];
+    int tam = 0, ch;
+    while ((ch = fgetc(arq)) != EOF && tam < TAM_SCRIPT - 1)
+    {
+        conteudo[tam] = (char) ch;
+        tam++;
+    }
+    conteudo[tam] = '\0';
+    fclose(arq);
+
+    BancoDados *bd = NULL;
+    char comando[TAM_SCRIPT];
+
+    while (conteudo[0] != '\0')
+    {
+        LerComandoDDL(conteudo, comando);
+        if (comando[0] != '\0')
+            ProcessarComandoDDL(&bd, comando);
+    }
+
+    return bd;
+}
+
+// ========== acaba leitura de script  ========== //
 
 void executar(BancoDados *bd)
 {
     char str[TF], instrucao, tecla = 'S';
-    gets(str);
-    instrucao = lerInstrucao(str);
-
     do
     {
+        printf("\nLinha de Comando SQL: ");
+        gets(str);
+        instrucao = lerInstrucao(str);
         switch (instrucao)
         {
         case 'I':
@@ -648,9 +1179,8 @@ void executar(BancoDados *bd)
         case 'N':
             break;
         }
-        tecla = getch();
-        gets(str);
-        instrucao = lerInstrucao(str);
+        printf("Tecle para continuar os comandos SQL; [Esc] para finalizar programa");
+        tecla = getche();
     } while (tecla != 27);
 }
 
@@ -660,9 +1190,11 @@ int main()
     char arq[TF];
     printf("Arquivo: ");
     gets(arq);
-    BancoDados *bd;
-
-    bd = lerScript(arq);
+    BancoDados *bd = NULL;
+    bd = LerScript(arq);
+    if(bd != NULL)
+        printf("\n***Banco de Dados Criado!***\n");
     executar(bd);
-    
+
+    return 0;
 }
