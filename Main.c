@@ -49,10 +49,12 @@ void lerAteWhere(char frase[TF],char colval[TF]);
 void converteDado(char tipoDados,char valor[TF],TipoValor *dado);
 void lerSet(Fila **F1,Fila **F2, Tabela *auxTab,char frase[TF]);
 void update(BancoDados *bd,char frase[TF]);
-void lerWhere();
-void delete();
+void lerWhere(Campos **condCampo, Tabela *Tab, char *modo, TipoValor *valor, TipoValor *valorIni, TipoValor *valorFin, char frase[TF]);
+void delete(BancoDados *bd,char frase[TF]);
 void destruir(Fila **F1);
-void selectAll();
+void select(BancoDados *bd,char frase[TF])();
+char contemPonto(char frase[TF]);
+
 
 
 void enqueue(Fila **F1, Nos Dado)
@@ -176,17 +178,6 @@ char lerInstrucao(char str[TF])
     }
     else if (strcmp(aux, "SELECT") == 0)
     {
-        lerPalavra(str, aux);
-        if (strcmp(aux, "*") == 0)
-        {
-            return '*';
-        }
-        while (aux[i] != '\0')
-            i++;
-        aux[i] = ' ';
-        aux[i + 1] = '\0';
-        strcat(aux, str);
-        strcpy(str, aux);
         return 'S';
     }
     printf("\nComando '%s' invalido!\n", aux);
@@ -197,7 +188,7 @@ void lerColuna(char frase[TF], char aux[TF])
 {
     int i = 0, j = 0;
 
-    while (frase[i] != ',' && frase[i] != '\0')
+    while (frase[i] != ',' && frase[i] != '\0' && frase[i] != ' ')
     {
         aux[i] = frase[i];
         i++;
@@ -578,14 +569,51 @@ void delete(BancoDados *bd,char frase[TF])
     printf("\nDelete concluido!\n");
 }
 
-void selectAll()
-{
 
+char contemPonto(char frase[TF])
+{
+    int i = 0
+    while(frase[i] != '.' && frase[i] != '\0')
+        i++;
+    return frase[i] == '.';
 }
 
-void select()
-{
 
+void select(BancoDados *bd,char frase[TF])
+{
+    Fila *F1,F2;
+    init(&F1);
+    char aux[TF];
+    Nos coln,dados;
+    Tabela *auxTab;
+    Campos *auxCampo;
+    int largura=0;
+    lerColuna(frase,aux);
+
+    
+    if(aux == "*")
+    {
+        lerPalavra(frase,aux); //consome FROM
+        lerPalavra(frase,aux);
+        auxTab = buscarTabela(bd->pTabelas,aux);
+        auxCampo = auxTab->pCampos;
+        while(auxCampo != NULL)
+        {
+            coln.Arg.Campo = auxCampo;
+            dados.Dado.TipoDados = auxCampo->tipo;
+            enqueue(&F1,coln);
+            enqueue(&F2,dados);
+            auxCampo = auxCampo->prox;
+        }
+    }
+    else if(contemPonto(aux))
+    {
+    
+    }
+    else
+    {
+
+    }
 }
 
 void lerScript()
@@ -616,9 +644,6 @@ void executar(BancoDados *bd)
             break;
         case 'S':
             select(bd, str);
-            break;
-        case '*':
-            selectAll(bd, str);
             break;
         case 'N':
             break;
