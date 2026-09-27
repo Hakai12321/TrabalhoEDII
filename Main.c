@@ -1277,7 +1277,7 @@ void executar(BancoDados *bd)
         case 'N':
             break;
         }
-        printf("Tecle para continuar os comandos SQL; [Esc] para finalizar programa");
+        printf("Tecle para continuar os comandos SQL; [Esc] para finalizar programa: ");
         tecla = getche();
     } while (tecla != 27);
 }
@@ -1291,8 +1291,11 @@ int main()
     BancoDados *bd = NULL;
     bd = LerScript(arq);
     if(bd != NULL)
+    {
         printf("\n***Banco de Dados Criado!***\n");
-    executar(bd);
-
+        executar(bd);
+    }
+    else
+        printf("\n**Erro na abertura do Arquivo!**\n");
     return 0;
 }
