@@ -451,7 +451,7 @@ void insert(BancoDados *bd, char aux[TF])
             printf("\nColunas Invalidas!\n");
     }
     else
-        printf("Tabela Invalida!");
+        printf("\n**Tabela Invalida!**\n");
 }
 
 void lerAteWhere(char frase[TF],char colval[TF])
@@ -717,12 +717,12 @@ void exibirDados(Tabela *auxTab, Fila *F1, Fila *F2, int qtde,Campos *condCampo,
     if(where == 'N')
     {
         campoPk = buscarCampoPK(auxTab->pCampos);
-        printf("\n----------*** %s ***----------\n", auxTab->tabela);
+        printf("\n-------------*** %s ***-------------\n", auxTab->tabela);
 
         valorAtual = campoPk->pDados;
         while(valorAtual != NULL)
         {
-            printf("---------LINHA %d----------\n", linha);
+            printf("-----------------LINHA %d-----------------\n", linha);
             FCol = F1;
             while(FCol != NULL)
             {
@@ -735,14 +735,14 @@ void exibirDados(Tabela *auxTab, Fila *F1, Fila *F2, int qtde,Campos *condCampo,
     }
     else if(where == 'W')
     {
-        printf("\n----------*** %s ***----------\n", auxTab->tabela);
+        printf("\n-------------*** %s ***-------------\n", auxTab->tabela);
         while(buscarValorPorIndice(condCampo->pDados, linha) != NULL)
         {
             valorAtual = buscarValorPorIndice(condCampo->pDados, linha);
 
             if(compararValor(valorAtual,condCampo->tipo,modo,valor,valorIni,valorFin))
             {
-                printf("---------LINHA %d----------\n", linha);
+                printf("-----------------LINHA %d-----------------\n", linha);
                 FCol = F1;
                 while(FCol != NULL)
                 {
@@ -755,8 +755,13 @@ void exibirDados(Tabela *auxTab, Fila *F1, Fila *F2, int qtde,Campos *condCampo,
     }
     else if(where == '.')
     {
-        printf("\n-----***%s***-----***%s***-----\n",F2->Nos.Arg.Tab->tabela,F2->prox->Nos.Arg.Tab->tabela);
+        printf("\n-------***%s***------",F2->Nos.Arg.Tab->tabela);
+        FTab = F2;
+        while(FTab != NULL && strcmp(FTab->Nos.Arg.Tab->tabela,FTab->prox->Nos.Arg.Tab->tabela)==0)
+            FTab = FTab->prox;
+        printf("***%s***-------\n",FTab->prox->Nos.Arg.Tab->tabela);
         valorPk = Pk->pDados;
+        
         while(valorPk != NULL)
         {
             linhaFk = 1;
@@ -765,7 +770,7 @@ void exibirDados(Tabela *auxTab, Fila *F1, Fila *F2, int qtde,Campos *condCampo,
             {
                 if(compararValor(valorPk,Pk->tipo,'=',valorFk->valor,valorIni,valorFin))
                 {
-                    printf("---------LINHA %d----------\n",nLin);
+                    printf("-----------------LINHA %d-----------------\n",nLin);
 
                     FCol = F1;
                     FTab = F2;
@@ -838,6 +843,7 @@ void wherePonto(BancoDados *bd,Campos **Fk,Campos **Pk,char frase[TF])
 {
     char aux[TF],tab[TF],cond[TF];
     Tabela *auxTab;
+
     lerPonto(frase,tab,cond);
     auxTab = buscarTabela(bd->pTabelas,tab);
     *Pk = buscarCampo(auxTab->pCampos,cond); // nome da coluna da PK
@@ -845,7 +851,6 @@ void wherePonto(BancoDados *bd,Campos **Fk,Campos **Pk,char frase[TF])
     lerPonto(frase,tab,cond);
     auxTab = buscarTabela(bd->pTabelas,tab);
     *Fk = buscarCampo(auxTab->pCampos,cond); // nome da coluna da FK
-
 }
 
 void select(BancoDados *bd,char frase[TF])
@@ -863,7 +868,7 @@ void select(BancoDados *bd,char frase[TF])
     int qtde=0;
 
     strcpy(copia,frase);
-    lerPalavra(copia,aux); // primeiro token depois do SELECT
+    lerPalavra(copia,aux);
 
     if(strcmp(aux,"*")==0)
     {
@@ -883,21 +888,21 @@ void select(BancoDados *bd,char frase[TF])
     }
     else if(contemPonto(aux))
     {
-        strcpy(colunas, aux);
+        strcpy(copia,frase);
+        lerPonto(copia,tab,col);
         while(strcmp(tab,"FROM")!=0)
         {
-            lerPonto(copia,tab,col);
             tabl.Arg.Tab = buscarTabela(bd->pTabelas,tab);
             coln.Arg.Campo = buscarCampo(tabl.Arg.Tab->pCampos,col);
             enqueue(&F1,coln);
             enqueue(&F2,tabl);
             qtde++;
-            if (copia[0] != '\0')
-                lerPonto(copia,tab,col);
+            lerPonto(copia,tab,col);
         }
         lerPalavra(copia,aux);
         while(strcmp(aux,"WHERE")!=0)
             lerPalavra(copia,aux);
+
         wherePonto(bd,&Fk,&Pk,copia);
         where = '.';
         exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
@@ -905,12 +910,13 @@ void select(BancoDados *bd,char frase[TF])
     else
     {
         strcpy(colunas,aux);
+        lerPalavra(copia,aux);
         while(strcmp(aux,"FROM")!=0)
         {
             if(aux[strlen(aux)-1] == ',')
                 aux[strlen(aux)-1] = '\0';
-            strcat(colunas,aux);
             strcat(colunas," ");
+            strcat(colunas,aux);
             lerPalavra(copia,aux);
         }
         lerPalavra(copia,aux); //ler tabela
@@ -1267,7 +1273,7 @@ void executar(BancoDados *bd)
         case 'N':
             break;
         }
-        printf("Tecle para continuar os comandos SQL; [Esc] para finalizar programa: ");
+        printf("\nTecle para continuar os comandos SQL; [Esc] para finalizar programa: ");
         tecla = getche();
     } while (tecla != 27);
 }

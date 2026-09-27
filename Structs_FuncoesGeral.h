@@ -125,7 +125,7 @@ void    inserirTabela(BancoDados *bd, Tabela *tab){
 Tabela* buscarTabela(Tabela *tab, char nome[TF]){
     if(tab == NULL)
     {
-        printf("Erro de Compilacao!!!");
+        printf("\nErro de Compilacao!!!\n");
     }
     else
     {
@@ -137,7 +137,6 @@ Tabela* buscarTabela(Tabela *tab, char nome[TF]){
         {
             return tab;
         }
-        printf("Nao existe!!!");
     }
     return NULL;
 }
@@ -250,7 +249,6 @@ Campos* buscarCampo(Campos *campo, char* nome){
             {
                 return campo;
             }
-            printf("Nao existe!!!");
         }
         return NULL;
 }
@@ -265,7 +263,7 @@ Campos* buscarCampoPK(Campos *campo){
             campo = campo->prox;
 
         if(campo == NULL)
-            printf("Nao existe Primary Key!");
+            printf("\nNao existe Primary Key!\n");
     }
     return campo;
 
@@ -282,7 +280,7 @@ Campos* buscarCampoFK(Campos *campo){
             campo = campo->prox;
 
         if(campo == NULL)
-            printf("Nao existe Foreign Key!");
+            printf("\nNao existe Foreign Key!\n");
     }
     return campo;
 
@@ -341,8 +339,6 @@ Valor* buscarValorPorIndice(Valor* valores, int indiceLinha){
             valores = valores->prox;
             indiceLinha--;
         }
-        if(valores == NULL)
-            printf("Nao existe");
     }
     return valores;
 }
@@ -358,7 +354,7 @@ void  removerValorPorIndice(Campos *campo, int indiceLinha){
             indiceLinha--;
         }
         if(atual == NULL)
-            printf("Nao existe");
+            printf("\nNao existe\n");
         else{
             if(campo->pDados == atual){
                 campo->pDados = atual->prox;
@@ -463,7 +459,7 @@ char compararValor(Valor *valorAtual, char tipo, char modo, TipoValor valorCond,
 
 void  liberarValores(Valor* valores){
     if (valores == NULL) 
-        printf("Valores inexistentes!!!");
+        printf("\nValores inexistentes!!!\n");
     else{
         Valor *atual=valores; 
         while(atual!=NULL)
