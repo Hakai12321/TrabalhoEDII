@@ -1,0 +1,38 @@
+CREATE DATABASE db_restaurante;
+
+CREATE TABLE cliente (
+    id_cliente INTEGER   NOT NULL,
+    nome CHARACTER(20) ,
+    telefone CHARACTER(20) ,
+    CONSTRAINT PK_cliente PRIMARY KEY (id_cliente)
+);
+
+CREATE TABLE pedido (
+    id_pedido INTEGER   NOT NULL,
+    data_pedido DATE ,
+    id_cliente INTEGER ,
+    CONSTRAINT PK_pedido PRIMARY KEY (id_pedido)
+);
+
+CREATE TABLE prato (
+    id_prato INTEGER   NOT NULL,
+    nome CHARACTER(20) ,
+    preco NUMERIC(6,2) ,
+    CONSTRAINT PK_prato PRIMARY KEY (id_prato)
+);
+
+CREATE TABLE item_pedido (
+    id_pedido INTEGER   NOT NULL,
+    id_prato INTEGER   NOT NULL,
+    quantidade INTEGER ,
+    CONSTRAINT PK_item_pedido PRIMARY KEY (id_pedido, id_prato)
+);
+
+ALTER TABLE pedido ADD CONSTRAINT cliente_pedido 
+    FOREIGN KEY (id_cliente) REFERENCES cliente (id_cliente);
+
+ALTER TABLE item_pedido ADD CONSTRAINT pedido_item_pedido 
+    FOREIGN KEY (id_pedido) REFERENCES pedido (id_pedido);
+
+ALTER TABLE item_pedido ADD CONSTRAINT prato_item_pedido 
+    FOREIGN KEY (id_prato) REFERENCES prato (id_prato);
