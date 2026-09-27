@@ -175,7 +175,7 @@ void lerPalavra(char frase[TF], char aux[TF])
 
         aux[j] = '\0';
 
-        while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t' || frase[i] == ',')
+        while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t' || frase[i] == ',' || frase[i] == ';')
             i++;
 
         j = 0;
@@ -248,6 +248,8 @@ void lerColuna(char frase[TF], char aux[TF])
         i++;
 
     if (frase[i] == ',')
+        i++;
+    else if (frase[i] == ';')
         i++;
 
     while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t')
@@ -355,6 +357,7 @@ char lerDados(BancoDados *bd, Fila *F1, char Tab[TF], char str[TF], Fila **F2)
                 if (auxCampo->tipo == F1->Nos.Arg.Campo->tipo)
                 {
                     lerColuna(valores,aux);
+                    Dados.Dado.TipoDados = auxCampo->tipo;
                     converteDado(Dados.Dado.TipoDados,aux,&Dados.Dado.Tipo);
                     if (aux[0] == ' ' || aux[0] == '\0' || aux[0] == '\n')
                     {
@@ -848,14 +851,18 @@ void select(BancoDados *bd,char frase[TF])
     int qtde=0;
 
     strcpy(copia,frase);
-    lerPalavra(copia,aux);
+    lerPalavra(copia,aux); // primeiro token depois do SELECT
 
     if(strcmp(aux,"*")==0)
     {
-        lerPalavra(frase,aux); //consome *
-        lerPalavra(frase,aux); // FROM
-        lerPalavra(frase,aux); // ler tabela
+        lerPalavra(copia,aux); // FROM
+        lerPalavra(copia,aux); // tabela
         auxTab = buscarTabela(bd->pTabelas,aux);
+        if(auxTab == NULL)
+        {
+            printf("\nTabela invalida!\n");
+            return;
+        }
         auxCampo = auxTab->pCampos;
         while(auxCampo != NULL)
         {
@@ -864,41 +871,42 @@ void select(BancoDados *bd,char frase[TF])
             qtde++;
             auxCampo = auxCampo->prox;
         }
-        lerPalavra(frase,aux);
         where = 'N';
         exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
     }
     else if(contemPonto(aux))
     {
-        lerPonto(frase,tab,col);
+        strcpy(colunas, aux);
         while(strcmp(tab,"FROM")!=0)
         {
+            lerPonto(copia,tab,col);
             tabl.Arg.Tab = buscarTabela(bd->pTabelas,tab);
             coln.Arg.Campo = buscarCampo(tabl.Arg.Tab->pCampos,col);
             enqueue(&F1,coln);
             enqueue(&F2,tabl);
             qtde++;
-            lerPonto(frase,tab,col);
+            if (copia[0] != '\0')
+                lerPonto(copia,tab,col);
         }
-        lerPalavra(frase,aux);
+        lerPalavra(copia,aux);
         while(strcmp(aux,"WHERE")!=0)
-            lerPalavra(frase,aux);
-        wherePonto(bd,&Fk,&Pk,frase);
+            lerPalavra(copia,aux);
+        wherePonto(bd,&Fk,&Pk,copia);
         where = '.';
         exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
     }
     else
     {
-        lerPalavra(frase,aux);
+        strcpy(colunas,aux);
         while(strcmp(aux,"FROM")!=0)
         {
             if(aux[strlen(aux)-1] == ',')
                 aux[strlen(aux)-1] = '\0';
             strcat(colunas,aux);
             strcat(colunas," ");
-            lerPalavra(frase,aux);
+            lerPalavra(copia,aux);
         }
-        lerPalavra(frase,aux); //ler tabela
+        lerPalavra(copia,aux); //ler tabela
         auxTab = buscarTabela(bd->pTabelas,aux);
         auxCampo = auxTab->pCampos;
         lerPalavra(colunas,aux);
@@ -909,11 +917,16 @@ void select(BancoDados *bd,char frase[TF])
             qtde++;
             lerPalavra(colunas,aux);
         }
-        lerPalavra(frase,aux); //ler WHERE
-        if(strcmp(aux,"WHERE") == 0)
+        if(copia[0] != '\0')
         {
-            lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,frase);
-            where = 'W';
+            lerPalavra(copia,aux); //ler WHERE
+            if(strcmp(aux,"WHERE") == 0)
+            {
+                lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,copia);
+                where = 'W';
+            }
+            else
+                where = 'N';
         }
         else
             where = 'N';
