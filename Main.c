@@ -197,38 +197,48 @@ void lerPalavra(char frase[TF], char aux[TF])
     }
 }
 
-char lerInstrucao(char str[TF])
-{
-    char aux[TF];
-    lerPalavra(str, aux);
-    if (strcmp(aux, "INSERT") == 0)
-    {
-        lerPalavra(str, aux);
-        if (strcmp(aux, "INTO") == 0)
-        {
-            return 'I';
-        }
-        printf("\nComando '%s' invalido!\n", aux);
-        return 'N';
-    }
-    else if (strcmp(aux, "UPDATE") == 0)
-    {
-        return 'U';
-    }
-    else if (strcmp(aux, "DELETE") == 0)
-    {
-        lerPalavra(str, aux);
-        if (strcmp(aux, "FROM") == 0)
-        {
-            return 'D';
-        }
-    }
-    else if (strcmp(aux, "SELECT") == 0)
-    {
-        return 'S';
-    }
-    printf("\nComando '%s' invalido!\n", aux);
-    return 'N';
+char lerInstrucao(char str[TF]) 
+{     
+    char aux[TF];     
+    char valor;     
+    lerPalavra(str, aux);     
+    if (strcmp(aux, "INSERT") == 0)     
+    {         
+        lerPalavra(str, aux);         
+        if (strcmp(aux, "INTO") == 0)         
+        {             
+            valor = 'I';         
+        }         
+        else
+        {             
+            printf("\nComando '%s' invalido!\n", aux);             
+            valor = 'N';         
+        }     
+    }     
+    else if (strcmp(aux, "UPDATE") == 0)     
+    {         
+        valor = 'U';     
+    }     
+    else if (strcmp(aux, "DELETE") == 0)     
+    {         
+        lerPalavra(str, aux);         
+        if (strcmp(aux, "FROM") == 0)         
+        {             
+            valor = 'D';         
+        }     
+        else
+            valor = 'N';
+    }     
+    else if (strcmp(aux, "SELECT") == 0)     
+    {         
+        valor = 'S';     
+    }     
+    else
+    {        
+        printf("\nComando '%s' invalido!\n", aux);         
+        valor = 'N';     
+    }     
+    return valor; 
 }
 
 void lerColuna(char frase[TF], char aux[TF])
