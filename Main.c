@@ -914,41 +914,75 @@ void select(BancoDados *bd,char frase[TF])
     }
     else
     {
-        strcpy(colunas,aux);
-        while(strcmp(aux,"FROM")!=0)
+        int erro = 0;
+        colunas[0] = '\0';
+        while(strcmp(aux,"FROM")!=0 && erro == 0)
         {
-            if(aux[strlen(aux)-1] == ',')
-                aux[strlen(aux)-1] = '\0';
-            strcat(colunas,aux);
-            strcat(colunas," ");
+            int len = strlen(aux);
+            if(len > 0 && aux[len - 1] == ',')
+                aux[len - 1] = '\0';
+
+            if(colunas[0] != '\0')
+            {
+                int k = strlen(colunas);
+                colunas[k] = ' ';
+                colunas[k + 1] = '\0';
+            }
+
+            int k = strlen(colunas);
+            int j = 0;
+            while(aux[j] != '\0')
+            {
+                colunas[k++] = aux[j++];
+            }
+            colunas[k] = '\0';
+
             lerPalavra(copia,aux);
         }
-        lerPalavra(copia,aux); //ler tabela
-        auxTab = buscarTabela(bd->pTabelas,aux);
-        auxCampo = auxTab->pCampos;
-        lerPalavra(colunas,aux);
-        while(aux[0] != '\0')
+
+        if(erro == 0)
         {
-            coln.Arg.Campo = buscarCampo(auxCampo,aux);
-            enqueue(&F1,coln);
-            qtde++;
+            lerPalavra(copia,aux); //ler tabela
+            auxTab = buscarTabela(bd->pTabelas,aux);
+            auxCampo = auxTab->pCampos;
             lerPalavra(colunas,aux);
-        }
-        if(copia[0] != '\0')
-        {
-            lerPalavra(copia,aux); //ler WHERE
-            if(strcmp(aux,"WHERE") == 0)
+            while(aux[0] != '\0' && erro == 0)
             {
-                lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,copia);
-                where = 'W';
+                auxCampo = auxTab->pCampos;
+                coln.Arg.Campo = buscarCampo(auxCampo,aux);
+                if(coln.Arg.Campo == NULL)
+                {
+                    printf("\nColuna invalida: %s\n", aux);
+                    erro = 1;
+                    aux[0] = '\0';
+                }
+                else
+                {
+                    enqueue(&F1,coln);
+                    qtde++;
+                    lerPalavra(colunas,aux);
+                }
+            }
+        }
+
+        if(erro == 0)
+        {
+            if(copia[0] != '\0')
+            {
+                lerPalavra(copia,aux); //ler WHERE
+                if(strcmp(aux,"WHERE") == 0)
+                {
+                    lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,copia);
+                    where = 'W';
+                }
+                else
+                    where = 'N';
             }
             else
                 where = 'N';
-        }
-        else
-            where = 'N';
 
-        exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
+            exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
+        }
     }
 
     destruir(&F1);
