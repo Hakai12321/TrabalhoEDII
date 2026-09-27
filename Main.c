@@ -172,7 +172,6 @@ void lerPalavra(char frase[TF], char aux[TF])
 char lerInstrucao(char str[TF])
 {
     char aux[TF];
-    int i = 0;
     lerPalavra(str, aux);
     if (strcmp(aux, "INSERT") == 0)
     {
@@ -198,17 +197,6 @@ char lerInstrucao(char str[TF])
     }
     else if (strcmp(aux, "SELECT") == 0)
     {
-        lerPalavra(str, aux);
-        if (strcmp(aux, "*") == 0)
-        {
-            return '*';
-        }
-        while (aux[i] != '\0')
-            i++;
-        aux[i] = ' ';
-        aux[i + 1] = '\0';
-        strcat(aux, str);
-        strcpy(str, aux);
         return 'S';
     }
     printf("\nComando '%s' invalido!\n", aux);
@@ -815,10 +803,11 @@ void select(BancoDados *bd,char frase[TF])
     strcpy(copia,frase);
     lerPalavra(copia,aux);
 
-    if(strcmp(aux,"FROM")==0)
+    if(strcmp(aux,"*")==0)
     {
-        lerPalavra(frase,aux); //consome FROM
-        lerPalavra(frase,aux);
+        lerPalavra(frase,aux); //consome *
+        lerPalavra(frase,aux); // FROM
+        lerPalavra(frase,aux); // ler tabela
         auxTab = buscarTabela(bd->pTabelas,aux);
         auxCampo = auxTab->pCampos;
         while(auxCampo != NULL)
@@ -853,17 +842,19 @@ void select(BancoDados *bd,char frase[TF])
     }
     else
     {
-        lerColuna(frase,aux);
+        lerPalavra(frase,aux);
         while(strcmp(aux,"FROM")!=0)
         {
+            if(aux[strlen(aux)-1] == ',')
+                aux[strlen(aux)-1] = '\0';
             strcat(colunas,aux);
             strcat(colunas," ");
-            lerColuna(frase,aux);
+            lerPalavra(frase,aux);
         }
         lerPalavra(frase,aux); //ler tabela
         auxTab = buscarTabela(bd->pTabelas,aux);
         auxCampo = auxTab->pCampos;
-        lerColuna(colunas,aux);
+        lerPalavra(colunas,aux);
         while(aux[0] != '\0')
         {
             coln.Arg.Campo = buscarCampo(auxCampo,aux);
