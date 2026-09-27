@@ -123,47 +123,68 @@ void destruir(Fila **F1)
 
 void lerPalavra(char frase[TF], char aux[TF])
 {
-    int i = 0, j = 0;
+    int i = 0, j = 0, aspas = 0;
+
+    while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t')
+        i++;
+
     if (frase[i] == '(')
     {
-        while (frase[i + 1] != ')' && frase[i] != '\0')
+        i++;
+        while (frase[i] != '\0')
         {
-            aux[i] = frase[i + 1];
+            if (frase[i] == '\'')
+                aspas = !aspas;
+
+            if (frase[i] == ')' && aspas == 0)
+                break;
+
+            aux[j++] = frase[i];
             i++;
         }
-        aux[i] = '\0';
-        i = i + 2;
-        while(frase[i] == ' ')
+        aux[j] = '\0';
+
+        if (frase[i] == ')')
             i++;
+
+        while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t')
+            i++;
+
+        j = 0;
         while (frase[i] != '\0')
-        { 
+        {
             frase[j] = frase[i];
             i++;
             j++;
         }
         frase[j] = '\0';
-
     }
     else
     {
-        while (frase[i] != ' ' && frase[i] != '\n' && frase[i] != '\0' && frase[i] != ';')
+        while (frase[i] != '\0')
         {
-            aux[i] = frase[i];
+            if (frase[i] == '\'')
+                aspas = !aspas;
+
+            if (aspas == 0 && (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t' || frase[i] == ';' || frase[i] == ','))
+                break;
+
+            aux[j++] = frase[i];
             i++;
         }
 
-        aux[i] = '\0';
+        aux[j] = '\0';
 
-        while(frase[i] == ' ')
+        while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t' || frase[i] == ',')
             i++;
 
+        j = 0;
         while (frase[i] != '\0')
         {
             frase[j] = frase[i];
             i++;
             j++;
         }
-
         frase[j] = '\0';
     }
 }
@@ -204,23 +225,35 @@ char lerInstrucao(char str[TF])
 
 void lerColuna(char frase[TF], char aux[TF])
 {
-    int i = 0, j = 0;
+    int i = 0, j = 0, aspas = 0;
 
-    while (frase[i] != ',' && frase[i] != '\0' && frase[i] != ' ')
+    while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t')
+        i++;
+
+    while (frase[i] != '\0')
     {
-        aux[i] = frase[i];
+        if (frase[i] == '\'')
+            aspas = !aspas;
+
+        if (aspas == 0 && (frase[i] == ',' || frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t'))
+            break;
+
+        aux[j++] = frase[i];
         i++;
     }
 
-    aux[i] = '\0';
-    if (frase[i] != '\0')
-    {
-        if (frase[i + 1] == ' ')
-            i = i + 2;
-        else if (frase[i] == ',')
-            i++;
-    }
+    aux[j] = '\0';
 
+    while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t')
+        i++;
+
+    if (frase[i] == ',')
+        i++;
+
+    while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t')
+        i++;
+
+    j = 0;
     while (frase[i] != '\0')
     {
         frase[j] = frase[i];
@@ -421,8 +454,23 @@ void lerAteWhere(char frase[TF],char colval[TF])
 
 void converteDado(char tipoDados,char valor[TF],TipoValor *dado)
 {
-    int i;
+    int i, j = 0;
     float f;
+    char valorLimpo[TF];
+
+    while (valor[j] == ' ' || valor[j] == '\n' || valor[j] == '\r' || valor[j] == '\t')
+        j++;
+
+    if (valor[j] == '\'' && valor[strlen(valor) - 1] == '\'')
+    {
+        int k = j + 1;
+        int l = 0;
+        while (valor[k] != '\0' && valor[k] != '\'')
+            valorLimpo[l++] = valor[k++];
+        valorLimpo[l] = '\0';
+        strcpy(valor, valorLimpo);
+    }
+
     switch (tipoDados)
                     {
                     case 'I':
