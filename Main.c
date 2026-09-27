@@ -131,16 +131,21 @@ void lerPalavra(char frase[TF], char aux[TF])
     if (frase[i] == '(')
     {
         i++;
-        while (frase[i] != '\0')
+        char continuar = 1;
+        while (frase[i] != '\0' && continuar)
         {
             if (frase[i] == '\'')
                 aspas = !aspas;
 
             if (frase[i] == ')' && aspas == 0)
-                break;
+                continuar = 0;
 
-            aux[j++] = frase[i];
-            i++;
+            if (continuar)
+            {
+                aux[j++] = frase[i];
+                i++;
+            }
+                
         }
         aux[j] = '\0';
 
@@ -161,16 +166,19 @@ void lerPalavra(char frase[TF], char aux[TF])
     }
     else
     {
-        while (frase[i] != '\0')
+        char continuar = 1;
+        while (frase[i] != '\0' && continuar)
         {
             if (frase[i] == '\'')
                 aspas = !aspas;
 
             if (aspas == 0 && (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t' || frase[i] == ';' || frase[i] == ','))
-                break;
-
-            aux[j++] = frase[i];
-            i++;
+                continuar = 0;
+            if(continuar)
+            {
+                aux[j++] = frase[i];
+                i++;
+            }
         }
 
         aux[j] = '\0';
@@ -229,17 +237,20 @@ void lerColuna(char frase[TF], char aux[TF])
 
     while (frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t')
         i++;
-
-    while (frase[i] != '\0')
+    char continuar = 1;
+    while (frase[i] != '\0' && continuar)
     {
         if (frase[i] == '\'')
             aspas = !aspas;
 
         if (aspas == 0 && (frase[i] == ',' || frase[i] == ' ' || frase[i] == '\n' || frase[i] == '\r' || frase[i] == '\t'))
-            break;
-
-        aux[j++] = frase[i];
-        i++;
+            continuar = 0;
+        if(continuar)
+        {
+            aux[j++] = frase[i];
+            i++;
+        }
+        
     }
 
     aux[j] = '\0';
@@ -278,39 +289,38 @@ char validarColunas(Fila *F1)
     return flag == 0;
 }
 
-char lerArgs(BancoDados *bd, Fila **F1, char frase[TF], char tabela[TF])
-{
-    Tabela *auxTab;
-    Campos *auxCampo;
-    auxTab = buscarTabela(bd->pTabelas, tabela);
-    Nos Dado;
-    Fila *F2;
-    init(&F2);
-    char aux[TF], colunas[TF];
-    lerPalavra(frase, aux);
-    if (aux[0] != ' ' && aux[0] != '\0' && aux[0] != '\n')
+char lerArgs(BancoDados *bd, Fila **F1, char frase[TF], char tabela[TF]) {     
+    Tabela *auxTab;     
+    Campos *auxCampo;     
+    auxTab = buscarTabela(bd->pTabelas, tabela);     
+    char flag = 0;     
+    Nos Dado;     
+    Fila *F2;     
+    init(&F2);     
+    char aux[TF], colunas[TF];     
+    lerPalavra(frase, aux);     
+    if (aux[0] != ' ' && aux[0] != '\0' && aux[0] != '\n')     
     {
-        strcpy(colunas, aux);
-        while (colunas[0] != '\0')
+        strcpy(colunas, aux);         
+        while (colunas[0] != '\0')         
         {
-            lerColuna(colunas, aux);
-            auxCampo = buscarCampo(auxTab->pCampos, aux);
-            Dado.Arg.Campo = auxCampo;
-            enqueue(&F2, Dado);
-        }
-        if (validarColunas(F2))
-        {
-            while (!isEmpty(F2))
-            {
-                dequeue(&F2, &Dado);
-                enqueue(&*F1, Dado);
-            }
-            return 1;
-        }
-        else
-            return 0;
-    }
-    return 0;
+             lerColuna(colunas, aux);             
+             auxCampo = buscarCampo(auxTab->pCampos, aux);             
+             Dado.Arg.Campo = auxCampo;             
+             enqueue(&F2, Dado);         
+        }         
+        if (validarColunas(F2))         
+        {             
+            while (!isEmpty(F2))             
+            {                 
+                dequeue(&F2, &Dado);                 
+                enqueue(&*F1, Dado);             
+            }             flag = 1;         
+        }         
+        else             
+            flag = 0;     
+    }     
+    return flag; 
 }
 
 char lerDados(BancoDados *bd, Fila *F1, char Tab[TF], char str[TF], Fila **F2)
@@ -637,27 +647,21 @@ void delete(BancoDados *bd,char frase[TF])
 char contemPonto(char frase[TF])
 {
     int i = 0;
-
+    char flag = 0;
     while(frase[i] != '\0')
     {
         if(frase[i] == '.')
-            return 1;
+            flag = 1;
 
         i++;
     }
 
-    return 0;
+    return flag;
 }
 
 
 void imprimirValor(char campo[TF], Valor *valor, char tipo, int linha)
 {
-    if(valor == NULL || linha < 1)
-    {
-        printf("Erro!!\n");
-        return;
-    }
-
     while(valor != NULL && linha > 1)
     {
         valor = valor->prox;
@@ -667,31 +671,33 @@ void imprimirValor(char campo[TF], Valor *valor, char tipo, int linha)
     if(valor == NULL)
     {
         printf("%s: null\n", campo);
-        return;
     }
-
-    switch(toupper(tipo))
+    else
     {
-        case 'I':
-            printf("%s: %d\n", campo, valor->valor.valorI);
-            break;
+        switch(toupper(tipo))
+        {
+            case 'I':
+                printf("%s: %d\n", campo, valor->valor.valorI);
+                break;
 
-        case 'N':
-            printf("%s: %.2f\n", campo, valor->valor.valorN);
-            break;
+            case 'N':
+                printf("%s: %.2f\n", campo, valor->valor.valorN);
+                break;
 
-        case 'D':
-            printf("%s: %s\n", campo, valor->valor.valorD);
-            break;
+            case 'D':
+                printf("%s: %s\n", campo, valor->valor.valorD);
+                break;
 
-        case 'C':
-            printf("%s: %c\n", campo, valor->valor.valorC);
-            break;
+            case 'C':
+                printf("%s: %c\n", campo, valor->valor.valorC);
+                break;
 
-        case 'T':
-            printf("%s: %s\n", campo, valor->valor.valorT);
-            break;
+            case 'T':
+                printf("%s: %s\n", campo, valor->valor.valorT);
+                break;
+        }
     }
+    
 }
 
 void exibirDados(Tabela *auxTab, Fila *F1, Fila *F2, int qtde,Campos *condCampo, char modo, TipoValor valor,TipoValor valorIni, TipoValor valorFin, char where,Campos *Fk, Campos *Pk)
@@ -858,11 +864,6 @@ void select(BancoDados *bd,char frase[TF])
         lerPalavra(copia,aux); // FROM
         lerPalavra(copia,aux); // tabela
         auxTab = buscarTabela(bd->pTabelas,aux);
-        if(auxTab == NULL)
-        {
-            printf("\nTabela invalida!\n");
-            return;
-        }
         auxCampo = auxTab->pCampos;
         while(auxCampo != NULL)
         {
