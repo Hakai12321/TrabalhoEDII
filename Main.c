@@ -882,10 +882,14 @@ void select(BancoDados *bd,char frase[TF])
 
     if(strcmp(aux,"*")==0)
     {
-        lerPalavra(copia,aux); // FROM
-        lerPalavra(copia,aux); // tabela
+        
+        lerPalavra(frase,aux); //consome *
+        lerPalavra(frase,aux); //consome FROM
+        lerPalavra(frase,aux); //ler tabela
+        
         auxTab = buscarTabela(bd->pTabelas,aux);
         auxCampo = auxTab->pCampos;
+        
         while(auxCampo != NULL)
         {
             coln.Arg.Campo = auxCampo;
@@ -893,7 +897,17 @@ void select(BancoDados *bd,char frase[TF])
             qtde++;
             auxCampo = auxCampo->prox;
         }
-        where = 'N';
+    
+        lerPalavra(frase,aux); //ler WHERE
+    
+        if(strcmp(aux,"WHERE") == 0)
+        {
+            lerWhere(&condCampo,auxTab,&modo,&valor,&valorIni,&valorFin,frase);
+            where = 'W';
+        }
+        else
+            where = 'N';
+    
         exibirDados(auxTab,F1,F2,qtde,condCampo,modo,valor,valorIni,valorFin,where,Fk,Pk);
     }
     else if(contemPonto(aux))
