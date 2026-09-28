@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <conio.h>
 #include "Structs_FuncoesGeral.h"
-#define TF 200
+#define TF 1000
 #define TAM_SCRIPT 17000
 
 //----------INCLUDES--------------
